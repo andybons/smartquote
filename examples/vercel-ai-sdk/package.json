@@ -1,0 +1,19 @@
+{
+  "name": "smartquotes-vercel-ai-sdk-example",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "node --import tsx index.ts",
+    "check-types": "tsc --noEmit"
+  },
+  "dependencies": {
+    "ai": "^6.0.25",
+    "@ai-sdk/anthropic": "^3.0.9",
+    "smartquotes": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.9.3"
+  }
+}

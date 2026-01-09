@@ -32,7 +32,7 @@ pnpm check-types      # Type check all packages
 pnpm lint             # Lint all packages
 ```
 
-### Smartquotes package (packages/smartquotes/)
+### Smartquote package (packages/smartquote/)
 
 ```bash
 pnpm --filter smartquote build        # Build with tsup
@@ -47,7 +47,7 @@ pnpm --filter smartquote docs         # Generate API docs with TypeDoc
 Or from within the package directory:
 
 ```bash
-cd packages/smartquotes
+cd packages/smartquote
 pnpm build
 pnpm test
 ```
@@ -71,7 +71,7 @@ mypy smartquotes          # Type check
 
 ## Architecture
 
-### Smartquotes npm Package (`packages/smartquotes/`)
+### Smartquote npm Package (`packages/smartquote/`)
 
 Provides smart quote conversion utilities and an ESLint plugin, exported via three entry points:
 
@@ -124,7 +124,7 @@ Python port of the core conversion logic:
 - `pnpm-workspace.yaml` defines workspace packages
 - Examples use `workspace:*` protocol to reference the smartquotes package
 - Root `package.json` is private and contains shared dev dependencies (husky, commitlint)
-- After changing exports in `packages/smartquotes`, run `pnpm --filter smartquote build` before `pnpm check-types` - dependent packages import from `dist/`, not source
+- After changing exports in `packages/smartquote`, run `pnpm --filter smartquote build` before `pnpm check-types` - dependent packages import from `dist/`, not source
 
 ## Commit Convention
 

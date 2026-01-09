@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.4](https://github.com/andybons/smartquote/compare/smartquote-v0.3.3...smartquote-v0.3.4) (2026-01-09)
+
+
+### Features
+
+* add npm trusted publishing and reorganize READMEs ([b5a0518](https://github.com/andybons/smartquote/commit/b5a0518378ac714ddb62bb81f294f7bde55505be))
+
 ## [0.3.3](https://github.com/andybons/smartquote/compare/smartquote-v0.3.2...smartquote-v0.3.3) (2026-01-09)
 
 

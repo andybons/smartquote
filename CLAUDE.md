@@ -179,5 +179,4 @@ CI (`.github/workflows/ci.yml`) runs on push/PR to main:
 - Python: ruff, mypy, pytest
 
 Other workflows:
-- `release-please.yml`: Creates release PRs from conventional commits
-- `publish.yml`: Publishes to npm when a release is created
+- `release-please.yml`: Creates release PRs and publishes to npm via trusted publishing

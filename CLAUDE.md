@@ -130,6 +130,8 @@ Python port of the core conversion logic:
 
 This repo uses [Conventional Commits](https://www.conventionalcommits.org/) enforced by commitlint.
 
+**Do NOT include Co-Authored-By lines for Claude/AI in commit messages.**
+
 Format:
 ```
 type(scope?): subject

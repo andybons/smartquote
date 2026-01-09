@@ -1,1 +1,1 @@
-pnpm --filter smartquotes lint && pnpm --filter smartquotes test
+pnpm --filter smartquote lint && pnpm --filter smartquote test

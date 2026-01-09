@@ -21,7 +21,7 @@
 
 import { smoothStream, streamText } from 'ai';
 import { anthropic } from '@ai-sdk/anthropic';
-import { smartQuoteTransform, SmartQuote } from 'smartquotes/ai-sdk';
+import { smartQuoteTransform, SmartQuote } from 'smartquote/ai-sdk';
 
 // Check for API key early
 if (!process.env.ANTHROPIC_API_KEY) {

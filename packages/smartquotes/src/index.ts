@@ -7,7 +7,7 @@
  *
  * @example
  * ```ts
- * import { SmartQuote } from 'smartquotes';
+ * import { SmartQuote } from 'smartquote';
  *
  * const { LeftDouble, RightDouble } = SmartQuote;
  * console.log(`${LeftDouble}Hello${RightDouble}`); // "Hello"
@@ -102,7 +102,7 @@ function convertChar(
  *
  * @example Basic usage
  * ```ts
- * import { smartQuotes } from 'smartquotes';
+ * import { smartQuotes } from 'smartquote';
  *
  * smartQuotes('"Hello, world!"');
  * // Returns: \u201CHello, world!\u201D
@@ -188,7 +188,7 @@ function convertStreaming(chunk: string, state: StreamState): string {
  *
  * @example Building a custom transform
  * ```ts
- * import { createTextTransform } from 'smartquotes';
+ * import { createTextTransform } from 'smartquote';
  *
  * const transform = createTextTransform();
  *
@@ -406,7 +406,7 @@ function convertMarkdownStreaming(chunk: string, state: MarkdownStreamState): st
  *
  * @example Building a custom Markdown-aware transform
  * ```ts
- * import { createMarkdownTextTransform } from 'smartquotes';
+ * import { createMarkdownTextTransform } from 'smartquote';
  *
  * const transform = createMarkdownTextTransform();
  *
@@ -493,7 +493,7 @@ export interface SmartQuoteTransformOptions {
  *
  * @example Basic usage with streams
  * ```ts
- * import { smartQuoteTransform } from 'smartquotes';
+ * import { smartQuoteTransform } from 'smartquote';
  *
  * const response = await fetch('/api/stream');
  * const transformed = response.body
@@ -541,7 +541,7 @@ export function smartQuoteTransform(
  *
  * @example Basic usage
  * ```ts
- * import { smartQuoteAsyncIterable } from 'smartquotes';
+ * import { smartQuoteAsyncIterable } from 'smartquote';
  *
  * async function* generateText() {
  *   yield 'He said "hello" ';
@@ -623,7 +623,7 @@ interface CodeBlock {
  *
  * @example
  * ```ts
- * import { smartQuoteMarkdown } from 'smartquotes';
+ * import { smartQuoteMarkdown } from 'smartquote';
  *
  * const markdown = `
  * "This quote converts," she said.

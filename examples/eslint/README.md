@@ -1,6 +1,6 @@
 # ESLint Smart Quotes Example
 
-This example demonstrates the `smartquotes` ESLint plugin for enforcing typographically correct quotes in JSX/TSX files.
+This example demonstrates the `smartquote` ESLint plugin for enforcing typographically correct quotes in JSX/TSX files.
 
 ## Setup
 
@@ -48,8 +48,8 @@ The ESLint rule checks:
 Before fix:
 ```
 src/Example.tsx
-   6:7   error  Use smart quotes instead of straight quotes  smartquotes/smart-quotes
-   7:7   error  Use smart quotes instead of straight quotes  smartquotes/smart-quotes
+   6:7   error  Use smart quotes instead of straight quotes  smartquote/smart-quotes
+   7:7   error  Use smart quotes instead of straight quotes  smartquote/smart-quotes
   ...
 ```
 

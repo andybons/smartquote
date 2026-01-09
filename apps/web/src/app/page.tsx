@@ -1,4 +1,4 @@
-import { smartQuotes } from 'smartquotes';
+import { smartQuotes } from 'smartquote';
 
 export default function Home() {
   const example = smartQuotes('"Hello," she said. "It\'s a beautiful day!"');

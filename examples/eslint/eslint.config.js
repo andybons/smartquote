@@ -1,5 +1,5 @@
 import tseslint from 'typescript-eslint';
-import { plugin as smartQuotesPlugin } from 'smartquotes/eslint';
+import { plugin as smartQuotesPlugin } from 'smartquote/eslint';
 
 export default [
   ...tseslint.configs.recommended,
@@ -13,11 +13,11 @@ export default [
   {
     files: ['**/*.tsx', '**/*.jsx'],
     plugins: {
-      smartquotes: smartQuotesPlugin,
+      smartquote: smartQuotesPlugin,
     },
     rules: {
       // Enable the smart quotes rule
-      'smartquotes/smart-quotes': 'error',
+      'smartquote/smart-quotes': 'error',
       // Disable some TS rules for this example
       '@typescript-eslint/no-unused-vars': 'off',
     },

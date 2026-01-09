@@ -1,4 +1,4 @@
-# smartquotes
+# smartquote
 
 Smart quote conversion utilities and ESLint plugin for typographically correct quotes.
 
@@ -7,15 +7,15 @@ Converts straight quotes (`"` and `'`) to their curly/smart equivalents (`\u201C
 ## Installation
 
 ```bash
-npm install smartquotes
+npm install smartquote
 # or
-pnpm add smartquotes
+pnpm add smartquote
 ```
 
 ## Quick Start
 
 ```typescript
-import { smartQuotes, SmartQuote } from 'smartquotes';
+import { smartQuotes, SmartQuote } from 'smartquote';
 
 const result = smartQuotes('She said "hello"');
 // result === 'She said \u201Chello\u201D'
@@ -31,7 +31,7 @@ result.startsWith(`She said ${SmartQuote.LeftDouble}`); // true
 Converts straight quotes to smart quotes using context-aware rules.
 
 ```typescript
-import { smartQuotes, SmartQuote } from 'smartquotes';
+import { smartQuotes, SmartQuote } from 'smartquote';
 const { LeftDouble, RightDouble, RightSingle } = SmartQuote;
 
 // Basic conversion
@@ -52,7 +52,7 @@ smartQuotes(`He said "She told me 'yes'"`);
 Markdown-aware conversion that preserves straight quotes inside code blocks.
 
 ```typescript
-import { smartQuoteMarkdown } from 'smartquotes';
+import { smartQuoteMarkdown } from 'smartquote';
 
 const markdown = `
 "This quote converts," she said.
@@ -78,7 +78,7 @@ const result = smartQuoteMarkdown(markdown);
 Constants using Unicode escapes (immune to LLM normalization):
 
 ```typescript
-import { SmartQuote } from 'smartquotes';
+import { SmartQuote } from 'smartquote';
 
 SmartQuote.LeftDouble     // \u201C "
 SmartQuote.RightDouble    // \u201D "
@@ -97,7 +97,7 @@ For processing text streams (like AI chat responses) without re-processing alrea
 Wraps an `AsyncIterable<string>` to convert quotes on the fly. Use this for plain text streams.
 
 ```typescript
-import { smartQuoteAsyncIterable } from 'smartquotes';
+import { smartQuoteAsyncIterable } from 'smartquote';
 
 for await (const chunk of smartQuoteAsyncIterable(textStream)) {
   process.stdout.write(chunk);
@@ -114,7 +114,7 @@ for await (const chunk of smartQuoteAsyncIterable(textStream, { disableMarkdown:
 Returns a generic `TransformStream` for structured stream parts with a `text-delta` type.
 
 ```typescript
-import { smartQuoteTransform } from 'smartquotes';
+import { smartQuoteTransform } from 'smartquote';
 
 // Works with any stream of { type: 'text-delta', textDelta: string } parts
 const stream = someTextStream.pipeThrough(smartQuoteTransform());
@@ -133,17 +133,17 @@ const stream = someTextStream.pipeThrough(smartQuoteTransform({ disableMarkdown:
 
 ## Vercel AI SDK Integration
 
-For Vercel AI SDK v5+, use the dedicated `smartquotes/ai-sdk` entry point which provides properly typed transforms:
+For Vercel AI SDK v5+, use the dedicated `smartquote/ai-sdk` entry point which provides properly typed transforms:
 
 ```bash
-npm install smartquotes ai@>=5.0.0
+npm install smartquote ai@>=5.0.0
 ```
 
 ```typescript
 // app/api/chat/route.ts
 import { streamText } from 'ai';
 import { anthropic } from '@ai-sdk/anthropic';
-import { smartQuoteTransform } from 'smartquotes/ai-sdk';
+import { smartQuoteTransform } from 'smartquote/ai-sdk';
 
 export async function POST(req: Request) {
   const { messages } = await req.json();
@@ -158,7 +158,7 @@ export async function POST(req: Request) {
 }
 ```
 
-The `smartquotes/ai-sdk` module exports:
+The `smartquote/ai-sdk` module exports:
 - `smartQuoteTransform` - Typed for `StreamTextTransform<ToolSet>`
 - `smartQuotes` - Re-exported for convenience
 - `SmartQuote` - Re-exported for convenience
@@ -171,16 +171,16 @@ Enforce smart quotes in JSX/TSX at build time.
 
 ```javascript
 // eslint.config.js
-import { plugin as smartQuotesPlugin } from 'smartquotes/eslint';
+import { plugin as smartQuotesPlugin } from 'smartquote/eslint';
 
 export default [
   {
     files: ['**/*.tsx', '**/*.jsx'],
     plugins: {
-      smartquotes: smartQuotesPlugin,
+      smartquote: smartQuotesPlugin,
     },
     rules: {
-      'smartquotes/smart-quotes': 'error',
+      'smartquote/smart-quotes': 'error',
     },
   },
 ];
@@ -197,12 +197,12 @@ Non-user-facing props (`className`, `href`, `id`, `key`, etc.) are ignored.
 
 ```javascript
 // Add props to the default allowlist
-'smartquotes/smart-quotes': ['error', {
+'smartquote/smart-quotes': ['error', {
   additionalProps: ['data-tooltip', 'data-label']
 }]
 
 // Override defaults entirely
-'smartquotes/smart-quotes': ['error', {
+'smartquote/smart-quotes': ['error', {
   props: ['placeholder', 'title']
 }]
 ```
@@ -229,7 +229,7 @@ Based on the algorithm from [pensee.com/dunham/smartQuotes.html](http://pensee.c
 
 The streaming API processes chunks incrementally (O(n) total) rather than re-processing accumulated text (O(n²)). For long AI responses, this can be 100x+ faster.
 
-Run benchmarks locally with `pnpm --filter smartquotes bench`.
+Run benchmarks locally with `pnpm --filter smartquote bench`.
 
 ## Examples
 

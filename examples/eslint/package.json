@@ -8,7 +8,7 @@
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
-    "smartquotes": "workspace:*"
+    "smartquote": "workspace:*"
   },
   "devDependencies": {
     "@types/react": "^19.1.0",

@@ -35,13 +35,13 @@ pnpm lint             # Lint all packages
 ### Smartquotes package (packages/smartquotes/)
 
 ```bash
-pnpm --filter smartquotes build        # Build with tsup
-pnpm --filter smartquotes test         # Run all tests once
-pnpm --filter smartquotes test:watch   # Run tests in watch mode
-pnpm --filter smartquotes bench        # Run performance benchmarks
-pnpm --filter smartquotes lint         # ESLint on src/
-pnpm --filter smartquotes check-types  # TypeScript type checking
-pnpm --filter smartquotes docs         # Generate API docs with TypeDoc
+pnpm --filter smartquote build        # Build with tsup
+pnpm --filter smartquote test         # Run all tests once
+pnpm --filter smartquote test:watch   # Run tests in watch mode
+pnpm --filter smartquote bench        # Run performance benchmarks
+pnpm --filter smartquote lint         # ESLint on src/
+pnpm --filter smartquote check-types  # TypeScript type checking
+pnpm --filter smartquote docs         # Generate API docs with TypeDoc
 ```
 
 Or from within the package directory:
@@ -124,7 +124,7 @@ Python port of the core conversion logic:
 - `pnpm-workspace.yaml` defines workspace packages
 - Examples use `workspace:*` protocol to reference the smartquotes package
 - Root `package.json` is private and contains shared dev dependencies (husky, commitlint)
-- After changing exports in `packages/smartquotes`, run `pnpm --filter smartquotes build` before `pnpm check-types` - dependent packages import from `dist/`, not source
+- After changing exports in `packages/smartquotes`, run `pnpm --filter smartquote build` before `pnpm check-types` - dependent packages import from `dist/`, not source
 
 ## Commit Convention
 

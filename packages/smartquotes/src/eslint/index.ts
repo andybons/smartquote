@@ -10,15 +10,15 @@ export type { SmartQuotesRuleOptions } from './smart-quotes-rule.js';
  *
  * Usage in eslint.config.js:
  * ```js
- * import { plugin as smartQuotesPlugin } from 'smartquotes/eslint';
+ * import { plugin as smartQuotesPlugin } from 'smartquote/eslint';
  *
  * export default [
  *   {
  *     plugins: {
- *       smartquotes: smartQuotesPlugin,
+ *       smartquote: smartQuotesPlugin,
  *     },
  *     rules: {
- *       'smartquotes/smart-quotes': 'error',
+ *       'smartquote/smart-quotes': 'error',
  *     },
  *   },
  * ];
@@ -26,7 +26,7 @@ export type { SmartQuotesRuleOptions } from './smart-quotes-rule.js';
  */
 export const plugin: ESLint.Plugin = {
   meta: {
-    name: 'eslint-plugin-smartquotes',
+    name: 'eslint-plugin-smartquote',
     version: '0.1.0',
   },
   rules: {

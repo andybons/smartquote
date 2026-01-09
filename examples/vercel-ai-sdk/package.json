@@ -9,7 +9,7 @@
   "dependencies": {
     "ai": "^6.0.25",
     "@ai-sdk/anthropic": "^3.0.9",
-    "smartquotes": "workspace:*"
+    "smartquote": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

@@ -2,7 +2,7 @@
   "$schema": "https://typedoc.org/schema.json",
   "entryPoints": ["./src/index.ts", "./src/eslint/index.ts", "./src/ai-sdk/index.ts"],
   "out": "./docs",
-  "name": "smartquotes",
+  "name": "smartquote",
   "readme": "none",
   "excludePrivate": true,
   "excludeInternal": true,

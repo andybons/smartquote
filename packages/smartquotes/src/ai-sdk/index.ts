@@ -8,7 +8,7 @@
  * ```ts
  * import { streamText } from 'ai';
  * import { anthropic } from '@ai-sdk/anthropic';
- * import { smartQuoteTransform } from 'smartquotes/ai-sdk';
+ * import { smartQuoteTransform } from 'smartquote/ai-sdk';
  *
  * const result = streamText({
  *   model: anthropic('claude-sonnet-4-20250514'),
@@ -21,7 +21,7 @@
  * ```ts
  * import { smoothStream, streamText } from 'ai';
  * import { anthropic } from '@ai-sdk/anthropic';
- * import { smartQuoteTransform } from 'smartquotes/ai-sdk';
+ * import { smartQuoteTransform } from 'smartquote/ai-sdk';
  *
  * const result = streamText({
  *   model: anthropic('claude-sonnet-4-20250514'),

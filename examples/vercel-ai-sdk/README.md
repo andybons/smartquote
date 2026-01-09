@@ -1,6 +1,6 @@
 # Vercel AI SDK + Smart Quotes Example
 
-This example demonstrates integrating `smartquotes` with the Vercel AI SDK to automatically convert AI responses to use typographically correct smart quotes.
+This example demonstrates integrating `smartquote` with the Vercel AI SDK to automatically convert AI responses to use typographically correct smart quotes.
 
 ## Setup
 
@@ -48,12 +48,12 @@ The quotes in the output are curly/smart quotes (`\u201C` `\u201D` `\u2018` `\u2
 
 ## How It Works
 
-The `smartQuoteTransform` function from `smartquotes/ai-sdk` is typed for the Vercel AI SDK's `experimental_transform` option:
+The `smartQuoteTransform` function from `smartquote/ai-sdk` is typed for the Vercel AI SDK's `experimental_transform` option:
 
 ```typescript
 import { streamText } from 'ai';
 import { anthropic } from '@ai-sdk/anthropic';
-import { smartQuoteTransform } from 'smartquotes/ai-sdk';
+import { smartQuoteTransform } from 'smartquote/ai-sdk';
 
 const result = streamText({
   model: anthropic('claude-sonnet-4-20250514'),

@@ -30,8 +30,8 @@ importers:
         specifier: ^19.1.0
         version: 19.2.3(react@19.2.3)
       smartquote:
-        specifier: workspace:*
-        version: link:../../packages/smartquotes
+        specifier: ^0.1.0
+        version: 0.1.0(ai@6.0.25(zod@4.3.5))(eslint@9.39.2(jiti@2.6.1))
     devDependencies:
       '@types/node':
         specifier: ^22.0.0
@@ -1634,6 +1634,17 @@ packages:
 
   siginfo@2.0.0:
     resolution: {integrity: sha512-ybx0WO1/8bSBLEWXZvEd7gMW3Sn3JFlW3TvX1nREbDLRNQNaeNN8WK0meBwPdAaOI7TtRRRJn/Es1zhrrCHu7g==}
+
+  smartquote@0.1.0:
+    resolution: {integrity: sha512-4fXqam/MqgMssiT4BsS2Knfzm/k9RmU67jAPIFNw6fiprCRO3ijob+7tYGKKjkofCZzkmxZqeVa/PQngKLU+5g==}
+    peerDependencies:
+      ai: '>=6.0.0'
+      eslint: '>=8.0.0'
+    peerDependenciesMeta:
+      ai:
+        optional: true
+      eslint:
+        optional: true
 
   source-map-js@1.2.1:
     resolution: {integrity: sha512-UXWMKhLOwVKb728IUtQPXxfYU+usdybtUrK/8uGE8CQMvrhOpwvzDBwj0QhSL7MQc7vIsISBG8VQ8+IDQxpfQA==}
@@ -3334,6 +3345,11 @@ snapshots:
   shebang-regex@3.0.0: {}
 
   siginfo@2.0.0: {}
+
+  smartquote@0.1.0(ai@6.0.25(zod@4.3.5))(eslint@9.39.2(jiti@2.6.1)):
+    optionalDependencies:
+      ai: 6.0.25(zod@4.3.5)
+      eslint: 9.39.2(jiti@2.6.1)
 
   source-map-js@1.2.1: {}
 

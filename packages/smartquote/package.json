@@ -1,6 +1,6 @@
 {
   "name": "smartquote",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Smart quote conversion utilities and ESLint rule for typographically correct quotes",
   "repository": {
     "type": "git",

@@ -153,7 +153,7 @@ test: add benchmark for smartQuoteTransform
 ```
 
 Git hooks (via husky):
-- `pre-commit`: runs lint and test on smartquote package
+- `pre-commit`: runs lint, type check, and test across all packages
 - `commit-msg`: validates commit message format
 
 ## Releases

@@ -153,10 +153,31 @@ test: add benchmark for smartQuoteTransform
 ```
 
 Git hooks (via husky):
-- `pre-commit`: runs lint and test on smartquotes package
+- `pre-commit`: runs lint and test on smartquote package
 - `commit-msg`: validates commit message format
+
+## Releases
+
+Releases are automated via [Release Please](https://github.com/googleapis/release-please):
+
+1. Push commits to main with conventional commit messages
+2. Release Please automatically creates/updates a "Release PR"
+3. Merging the PR creates a GitHub release and triggers npm publish
+
+Version bumps are determined by commit types:
+- `fix:` → patch (0.1.0 → 0.1.1)
+- `feat:` → minor (0.1.0 → 0.2.0)
+- `feat!:` or `BREAKING CHANGE:` → major (0.1.0 → 1.0.0)
+
+npm publishing uses trusted publishing (OIDC) - no tokens required.
+
+## CI/CD
 
 CI (`.github/workflows/ci.yml`) runs on push/PR to main:
 - Commitlint validation
 - Node.js: lint, type check, test, build
 - Python: ruff, mypy, pytest
+
+Other workflows:
+- `release-please.yml`: Creates release PRs from conventional commits
+- `publish.yml`: Publishes to npm when a release is created

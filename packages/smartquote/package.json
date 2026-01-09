@@ -2,6 +2,18 @@
   "name": "smartquote",
   "version": "0.1.0",
   "description": "Smart quote conversion utilities and ESLint rule for typographically correct quotes",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/andybons/smartquote.git",
+    "directory": "packages/smartquote"
+  },
+  "homepage": "https://github.com/andybons/smartquote#readme",
+  "bugs": {
+    "url": "https://github.com/andybons/smartquote/issues"
+  },
+  "publishConfig": {
+    "provenance": true
+  },
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

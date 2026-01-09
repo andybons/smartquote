@@ -61,16 +61,16 @@ jobs:
         run: pnpm install
 
       - name: Lint
-        run: pnpm --filter smartquotes lint
+        run: pnpm --filter smartquote lint
 
       - name: Type check
-        run: pnpm --filter smartquotes check-types
+        run: pnpm --filter smartquote check-types
 
       - name: Test
-        run: pnpm --filter smartquotes test
+        run: pnpm --filter smartquote test
 
       - name: Build
-        run: pnpm --filter smartquotes build
+        run: pnpm --filter smartquote build
 
   python:
     name: Python

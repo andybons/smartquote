@@ -15,35 +15,35 @@ pnpm add smartquotes
 ## Quick Start
 
 ```typescript
-import { convertToSmartQuotes, QUOTES } from 'smartquotes';
+import { smartQuotes, SmartQuote } from 'smartquotes';
 
-const result = convertToSmartQuotes('She said "hello"');
+const result = smartQuotes('She said "hello"');
 // result === 'She said \u201Chello\u201D'
 
 // Verify with constants
-result.startsWith(`She said ${QUOTES.LEFT_DOUBLE}`); // true
+result.startsWith(`She said ${SmartQuote.LeftDouble}`); // true
 ```
 
 ## API Reference
 
-### `convertToSmartQuotes(text: string): string`
+### `smartQuotes(text: string): string`
 
 Converts straight quotes to smart quotes using context-aware rules.
 
 ```typescript
-import { convertToSmartQuotes, QUOTES } from 'smartquotes';
-const { LEFT_DOUBLE, RIGHT_DOUBLE, RIGHT_SINGLE } = QUOTES;
+import { smartQuotes, SmartQuote } from 'smartquotes';
+const { LeftDouble, RightDouble, RightSingle } = SmartQuote;
 
 // Basic conversion
-convertToSmartQuotes('"hello"');
-// === `${LEFT_DOUBLE}hello${RIGHT_DOUBLE}`
+smartQuotes('"hello"');
+// === `${LeftDouble}hello${RightDouble}`
 
 // Apostrophes are detected between letters
-convertToSmartQuotes("It's wonderful");
-// === `It${RIGHT_SINGLE}s wonderful`
+smartQuotes("It's wonderful");
+// === `It${RightSingle}s wonderful`
 
 // Nested quotes work correctly
-convertToSmartQuotes(`He said "She told me 'yes'"`);
+smartQuotes(`He said "She told me 'yes'"`);
 // Outer double quotes, inner single quotes
 ```
 
@@ -73,26 +73,26 @@ const result = smartQuoteMarkdown(markdown);
 - Inline code (`` ` ``)
 - Indented code blocks (4 spaces or tab)
 
-### `QUOTES`
+### `SmartQuote`
 
 Constants using Unicode escapes (immune to LLM normalization):
 
 ```typescript
-import { QUOTES } from 'smartquotes';
+import { SmartQuote } from 'smartquotes';
 
-QUOTES.LEFT_DOUBLE     // \u201C
-QUOTES.RIGHT_DOUBLE    // \u201D
-QUOTES.LEFT_SINGLE     // \u2018
-QUOTES.RIGHT_SINGLE    // \u2019
-QUOTES.STRAIGHT_DOUBLE // \u0022
-QUOTES.STRAIGHT_SINGLE // \u0027
+SmartQuote.LeftDouble     // \u201C "
+SmartQuote.RightDouble    // \u201D "
+SmartQuote.LeftSingle     // \u2018 '
+SmartQuote.RightSingle    // \u2019 '
+SmartQuote.StraightDouble // \u0022 "
+SmartQuote.StraightSingle // \u0027 '
 ```
 
 ## Streaming API
 
 For processing text streams (like AI chat responses) without re-processing already-converted content.
 
-### `smartQuoteAsyncIterable(source)`
+### `smartQuoteAsyncIterable(source, options?)`
 
 Wraps an `AsyncIterable<string>` to convert quotes on the fly. Use this for plain text streams.
 
@@ -100,6 +100,11 @@ Wraps an `AsyncIterable<string>` to convert quotes on the fly. Use this for plai
 import { smartQuoteAsyncIterable } from 'smartquotes';
 
 for await (const chunk of smartQuoteAsyncIterable(textStream)) {
+  process.stdout.write(chunk);
+}
+
+// Disable markdown-aware conversion (converts quotes even in code blocks)
+for await (const chunk of smartQuoteAsyncIterable(textStream, { disableMarkdown: true })) {
   process.stdout.write(chunk);
 }
 ```
@@ -113,7 +118,16 @@ import { smartQuoteTransform } from 'smartquotes';
 
 // Works with any stream of { type: 'text-delta', textDelta: string } parts
 const stream = someTextStream.pipeThrough(smartQuoteTransform());
+
+// Disable markdown-aware conversion
+const stream = someTextStream.pipeThrough(smartQuoteTransform({ disableMarkdown: true }));
 ```
+
+### Streaming Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `disableMarkdown` | `boolean` | `false` | When `false`, preserves straight quotes inside code blocks. Set to `true` to convert all quotes. |
 
 **Why streaming buffers trailing quotes:** When a chunk ends with `'` (e.g., `"don'"`), we can't determine if it's an apostrophe or closing quote until the next chunk arrives. Both streaming APIs handle this automatically.
 
@@ -137,7 +151,7 @@ export async function POST(req: Request) {
   const result = streamText({
     model: anthropic('claude-sonnet-4-20250514'),
     messages,
-    experimental_transform: smartQuoteTransform,
+    experimental_transform: smartQuoteTransform(),
   });
 
   return result.toDataStreamResponse();
@@ -146,8 +160,8 @@ export async function POST(req: Request) {
 
 The `smartquotes/ai-sdk` module exports:
 - `smartQuoteTransform` - Typed for `StreamTextTransform<ToolSet>`
-- `convertToSmartQuotes` - Re-exported for convenience
-- `QUOTES` - Re-exported for convenience
+- `smartQuotes` - Re-exported for convenience
+- `SmartQuote` - Re-exported for convenience
 
 See [`examples/vercel-ai-sdk/`](./examples/vercel-ai-sdk) for a complete runnable example.
 
@@ -215,11 +229,7 @@ Based on the algorithm from [pensee.com/dunham/smartQuotes.html](http://pensee.c
 
 The streaming API processes chunks incrementally (O(n) total) rather than re-processing accumulated text (O(n²)). For long AI responses, this can be 100x+ faster.
 
-```
-Benchmark: article-length streaming
-- Incremental API: 7,364 ops/s
-- Re-process each chunk: 68 ops/s
-```
+Run benchmarks locally with `pnpm --filter smartquotes bench`.
 
 ## Examples
 

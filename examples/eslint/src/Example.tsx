@@ -1,11 +1,12 @@
-// Example component with straight quotes that should be converted to smart quotes
+// Example component with straight quotes that the ESLint rule will flag.
+// Run `pnpm lint` to see the warnings, or `pnpm lint --fix` to auto-convert.
 
 export function WelcomeMessage() {
   return (
     <div>
-      <h1>“Welcome to our app!”</h1>
-      <p>We’re glad you’re here. It’s going to be great!</p>
-      <p>As the saying goes, “The best time to start is now.”</p>
+      <h1>"Welcome to our app!"</h1>
+      <p>We're glad you're here. It's going to be great!</p>
+      <p>As the saying goes, "The best time to start is now."</p>
     </div>
   );
 }
@@ -15,9 +16,9 @@ export function FormExample() {
     <form>
       <input
         type="text"
-        placeholder="Enter your partner’s name"
+        placeholder="Enter your partner's name"
         title="This field is required"
-        aria-label="Partner’s name input"
+        aria-label="Partner's name input"
       />
       <input
         type="email"
@@ -32,9 +33,9 @@ export function FormExample() {
 export function AccessibilityExample() {
   return (
     <div>
-      <img src="/logo.png" alt="Company’s official logo" />
-      <span aria-label="Click here to see today’s deals">Deals</span>
-      <div title="This item’s price may vary">$19.99</div>
+      <img src="/logo.png" alt="Company's official logo" />
+      <span aria-label="Click here to see today's deals">Deals</span>
+      <div title="This item's price may vary">$19.99</div>
     </div>
   );
 }

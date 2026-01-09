@@ -4,6 +4,13 @@ import { plugin as smartQuotesPlugin } from 'smartquotes/eslint';
 export default [
   ...tseslint.configs.recommended,
   {
+    languageOptions: {
+      parserOptions: {
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+  },
+  {
     files: ['**/*.tsx', '**/*.jsx'],
     plugins: {
       smartquotes: smartQuotesPlugin,

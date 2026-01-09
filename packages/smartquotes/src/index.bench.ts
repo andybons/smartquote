@@ -1,7 +1,7 @@
 import { bench, describe } from 'vitest';
 
 import {
-  convertToSmartQuotes,
+  smartQuotes,
   smartQuoteAsyncIterable,
   smartQuoteMarkdown,
 } from './index.js';
@@ -32,26 +32,26 @@ More "quoted text" here with \`inline "code"\` preserved.
 Final "paragraph" with 'quotes' and apostrophes like it's and don't.
 `;
 
-describe('convertToSmartQuotes', () => {
+describe('smartQuotes', () => {
   bench('sentence', () => {
-    convertToSmartQuotes(sentence);
+    smartQuotes(sentence);
   });
 
   bench('paragraph', () => {
-    convertToSmartQuotes(paragraph);
+    smartQuotes(paragraph);
   });
 
   bench('article (20 paragraphs)', () => {
-    convertToSmartQuotes(article);
+    smartQuotes(article);
   });
 });
 
 describe('smartQuoteMarkdown', () => {
-  bench('markdown document', () => {
+  bench('Markdown document', () => {
     smartQuoteMarkdown(markdownDoc);
   });
 
-  bench('long markdown (10 docs)', () => {
+  bench('long Markdown (10 docs)', () => {
     smartQuoteMarkdown(markdownDoc.repeat(10));
   });
 });
@@ -65,7 +65,7 @@ describe('streaming: re-process entire text each chunk (old approach)', () => {
     let accumulated = '';
     for (const chunk of streamingChunks) {
       accumulated += (accumulated ? ' ' : '') + chunk;
-      convertToSmartQuotes(accumulated);
+      smartQuotes(accumulated);
     }
   });
 
@@ -73,12 +73,12 @@ describe('streaming: re-process entire text each chunk (old approach)', () => {
     let accumulated = '';
     for (const chunk of articleChunks) {
       accumulated += (accumulated ? ' ' : '') + chunk;
-      convertToSmartQuotes(accumulated);
+      smartQuotes(accumulated);
     }
   });
 });
 
-describe('streaming: smartQuoteAsyncIterable', () => {
+describe('streaming: smartQuoteAsyncIterable (Markdown-aware)', () => {
   async function* generateChunks(chunks: string[]): AsyncGenerator<string> {
     for (let i = 0; i < chunks.length; i++) {
       yield (i > 0 ? ' ' : '') + chunks[i];
@@ -95,6 +95,28 @@ describe('streaming: smartQuoteAsyncIterable', () => {
   bench('article', async () => {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     for await (const chunk of smartQuoteAsyncIterable(generateChunks(articleChunks))) {
+      // consume
+    }
+  });
+});
+
+describe('streaming: smartQuoteAsyncIterable (disableMarkdown)', () => {
+  async function* generateChunks(chunks: string[]): AsyncGenerator<string> {
+    for (let i = 0; i < chunks.length; i++) {
+      yield (i > 0 ? ' ' : '') + chunks[i];
+    }
+  }
+
+  bench('paragraph', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    for await (const chunk of smartQuoteAsyncIterable(generateChunks(streamingChunks), { disableMarkdown: true })) {
+      // consume
+    }
+  });
+
+  bench('article', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    for await (const chunk of smartQuoteAsyncIterable(generateChunks(articleChunks), { disableMarkdown: true })) {
       // consume
     }
   });

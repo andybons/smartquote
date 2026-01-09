@@ -1,10 +1,10 @@
 import type { Rule } from 'eslint';
 import type { Literal, Node } from 'estree';
 
-import { convertToSmartQuotes, QUOTES } from '../index.js';
+import { smartQuotes, SmartQuote } from '../index.js';
 
 function hasStraightQuotes(text: string): boolean {
-  return text.includes(QUOTES.STRAIGHT_DOUBLE) || text.includes(QUOTES.STRAIGHT_SINGLE);
+  return text.includes(SmartQuote.StraightDouble) || text.includes(SmartQuote.StraightSingle);
 }
 
 // JSX props that contain user-facing text (allowlist approach)
@@ -122,7 +122,7 @@ const rule: Rule.RuleModule = {
         const text = jsxText.value;
         if (!hasStraightQuotes(text)) return;
 
-        const converted = convertToSmartQuotes(text);
+        const converted = smartQuotes(text);
 
         context.report({
           node,
@@ -151,7 +151,7 @@ const rule: Rule.RuleModule = {
         const text = literal.value;
         if (!hasStraightQuotes(text)) return;
 
-        const converted = convertToSmartQuotes(text);
+        const converted = smartQuotes(text);
 
         context.report({
           node: literal,
@@ -159,7 +159,7 @@ const rule: Rule.RuleModule = {
           fix(fixer) {
             // JSX attributes use double quotes, escape smart double quotes for JSX
             const escaped = converted.replace(
-              new RegExp(`[${QUOTES.LEFT_DOUBLE}${QUOTES.RIGHT_DOUBLE}]`, 'g'),
+              new RegExp(`[${SmartQuote.LeftDouble}${SmartQuote.RightDouble}]`, 'g'),
               (match) => `\\${match}`,
             );
             return fixer.replaceText(literal, `"${escaped}"`);

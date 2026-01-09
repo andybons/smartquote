@@ -1,132 +1,168 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-  convertToSmartQuotes,
-  QUOTES,
+  smartQuotes,
+  SmartQuote,
   smartQuoteAsyncIterable,
   smartQuoteMarkdown,
   smartQuoteTransform,
 } from './index.js';
 
-const { LEFT_DOUBLE, RIGHT_DOUBLE, LEFT_SINGLE, RIGHT_SINGLE } = QUOTES;
+const { LeftDouble, RightDouble, LeftSingle, RightSingle } = SmartQuote;
 
-describe('convertToSmartQuotes', () => {
+// Shared test helpers
+
+/** Collects all strings from a ReadableStream<string> */
+async function collectStrings(readable: ReadableStream<string>): Promise<string> {
+  const reader = readable.getReader();
+  const results: string[] = [];
+  let done = false;
+  while (!done) {
+    const { value, done: isDone } = await reader.read();
+    if (value) {
+      results.push(value);
+    }
+    done = isDone;
+  }
+  return results.join('');
+}
+
+/** Creates an async generator that yields chunks in sequence */
+async function* generateChunks(chunks: string[]): AsyncGenerator<string> {
+  for (const chunk of chunks) {
+    yield chunk;
+  }
+}
+
+/** Creates a ReadableStream from an array of parts */
+function createReadableStream<T>(parts: T[]): ReadableStream<T> {
+  return new ReadableStream({
+    start(controller) {
+      for (const part of parts) {
+        controller.enqueue(part);
+      }
+      controller.close();
+    },
+  });
+}
+
+describe('smartQuotes', () => {
   describe('double quotes', () => {
     it('converts simple double quotes', () => {
-      expect(convertToSmartQuotes('"hello"')).toBe(`${LEFT_DOUBLE}hello${RIGHT_DOUBLE}`);
+      expect(smartQuotes('"hello"')).toBe(`${LeftDouble}hello${RightDouble}`);
     });
 
     it('converts multiple quoted phrases', () => {
-      expect(convertToSmartQuotes('She said "hello" and he said "goodbye"')).toBe(
-        `She said ${LEFT_DOUBLE}hello${RIGHT_DOUBLE} and he said ${LEFT_DOUBLE}goodbye${RIGHT_DOUBLE}`,
+      expect(smartQuotes('She said "hello" and he said "goodbye"')).toBe(
+        `She said ${LeftDouble}hello${RightDouble} and he said ${LeftDouble}goodbye${RightDouble}`,
       );
     });
 
     it('handles quotes at start of text', () => {
-      expect(convertToSmartQuotes('"Start with quote"')).toBe(
-        `${LEFT_DOUBLE}Start with quote${RIGHT_DOUBLE}`,
+      expect(smartQuotes('"Start with quote"')).toBe(
+        `${LeftDouble}Start with quote${RightDouble}`,
       );
     });
 
     it('handles quotes after newline', () => {
-      expect(convertToSmartQuotes('Line 1\n"Line 2"')).toBe(
-        `Line 1\n${LEFT_DOUBLE}Line 2${RIGHT_DOUBLE}`,
+      expect(smartQuotes('Line 1\n"Line 2"')).toBe(
+        `Line 1\n${LeftDouble}Line 2${RightDouble}`,
       );
     });
 
     it('handles quotes after left punctuation', () => {
-      expect(convertToSmartQuotes('("quoted")')).toBe(
-        `(${LEFT_DOUBLE}quoted${RIGHT_DOUBLE})`,
+      expect(smartQuotes('("quoted")')).toBe(
+        `(${LeftDouble}quoted${RightDouble})`,
       );
-      expect(convertToSmartQuotes('["quoted"]')).toBe(
-        `[${LEFT_DOUBLE}quoted${RIGHT_DOUBLE}]`,
+      expect(smartQuotes('["quoted"]')).toBe(
+        `[${LeftDouble}quoted${RightDouble}]`,
       );
-      expect(convertToSmartQuotes('{"quoted"}')).toBe(
-        `{${LEFT_DOUBLE}quoted${RIGHT_DOUBLE}}`,
+      expect(smartQuotes('{"quoted"}')).toBe(
+        `{${LeftDouble}quoted${RightDouble}}`,
       );
-      expect(convertToSmartQuotes('<"quoted">')).toBe(
-        `<${LEFT_DOUBLE}quoted${RIGHT_DOUBLE}>`,
+      expect(smartQuotes('<"quoted">')).toBe(
+        `<${LeftDouble}quoted${RightDouble}>`,
       );
     });
   });
 
   describe('single quotes', () => {
     it('converts simple single quotes', () => {
-      expect(convertToSmartQuotes("'hello'")).toBe(`${LEFT_SINGLE}hello${RIGHT_SINGLE}`);
+      expect(smartQuotes("'hello'")).toBe(`${LeftSingle}hello${RightSingle}`);
     });
 
     it('converts multiple single-quoted phrases', () => {
-      expect(convertToSmartQuotes("She said 'hi' and 'bye'")).toBe(
-        `She said ${LEFT_SINGLE}hi${RIGHT_SINGLE} and ${LEFT_SINGLE}bye${RIGHT_SINGLE}`,
+      expect(smartQuotes("She said 'hi' and 'bye'")).toBe(
+        `She said ${LeftSingle}hi${RightSingle} and ${LeftSingle}bye${RightSingle}`,
       );
     });
   });
 
   describe('apostrophes', () => {
     it("converts apostrophes in contractions (it's)", () => {
-      expect(convertToSmartQuotes("it's")).toBe(`it${RIGHT_SINGLE}s`);
+      expect(smartQuotes("it's")).toBe(`it${RightSingle}s`);
     });
 
     it("converts apostrophes in contractions (don't)", () => {
-      expect(convertToSmartQuotes("don't")).toBe(`don${RIGHT_SINGLE}t`);
+      expect(smartQuotes("don't")).toBe(`don${RightSingle}t`);
     });
 
     it("converts apostrophes in contractions (I'm)", () => {
-      expect(convertToSmartQuotes("I'm")).toBe(`I${RIGHT_SINGLE}m`);
+      expect(smartQuotes("I'm")).toBe(`I${RightSingle}m`);
     });
 
     it('handles apostrophes in full sentences', () => {
-      expect(convertToSmartQuotes("It's a beautiful day, isn't it?")).toBe(
-        `It${RIGHT_SINGLE}s a beautiful day, isn${RIGHT_SINGLE}t it?`,
+      expect(smartQuotes("It's a beautiful day, isn't it?")).toBe(
+        `It${RightSingle}s a beautiful day, isn${RightSingle}t it?`,
       );
     });
 
     it('handles possessives at word boundaries (plural possessive)', () => {
       // "dogs' toys" - apostrophe after s, followed by space
-      expect(convertToSmartQuotes("The dogs' toys")).toBe(`The dogs${RIGHT_SINGLE} toys`);
+      expect(smartQuotes("The dogs' toys")).toBe(`The dogs${RightSingle} toys`);
     });
 
     it('handles possessives followed by punctuation', () => {
-      expect(convertToSmartQuotes("That's the dogs'.")).toBe(
-        `That${RIGHT_SINGLE}s the dogs${RIGHT_SINGLE}.`,
+      expect(smartQuotes("That's the dogs'.")).toBe(
+        `That${RightSingle}s the dogs${RightSingle}.`,
       );
     });
 
     it('handles year abbreviations (known limitation)', () => {
-      // '90s - ideally should be RIGHT_SINGLE (apostrophe for omitted "19"),
+      // '90s - ideally should be RightSingle (apostrophe for omitted "19"),
       // but algorithm treats ' after space as opening quote.
       // This is a known edge case; most smart quote algorithms have this limitation.
-      expect(convertToSmartQuotes("the '90s")).toBe(`the ${LEFT_SINGLE}90s`);
+      expect(smartQuotes("the '90s")).toBe(`the ${LeftSingle}90s`);
     });
   });
 
   describe('nested quotes', () => {
     it('handles double quotes containing single quotes', () => {
-      expect(convertToSmartQuotes(`"She said 'hello'"`)).toBe(
-        `${LEFT_DOUBLE}She said ${LEFT_SINGLE}hello${RIGHT_SINGLE}${RIGHT_DOUBLE}`,
+      expect(smartQuotes(`"She said 'hello'"`)).toBe(
+        `${LeftDouble}She said ${LeftSingle}hello${RightSingle}${RightDouble}`,
       );
     });
 
     it('handles single quotes containing double quotes', () => {
-      expect(convertToSmartQuotes(`'He said "hi"'`)).toBe(
-        `${LEFT_SINGLE}He said ${LEFT_DOUBLE}hi${RIGHT_DOUBLE}${RIGHT_SINGLE}`,
+      expect(smartQuotes(`'He said "hi"'`)).toBe(
+        `${LeftSingle}He said ${LeftDouble}hi${RightDouble}${RightSingle}`,
       );
     });
   });
 
   describe('no-op cases', () => {
     it('returns text unchanged when already smart quotes', () => {
-      const smartText = `${LEFT_DOUBLE}hello${RIGHT_DOUBLE}`;
-      expect(convertToSmartQuotes(smartText)).toBe(smartText);
+      const smartText = `${LeftDouble}hello${RightDouble}`;
+      expect(smartQuotes(smartText)).toBe(smartText);
     });
 
     it('returns text unchanged when no quotes present', () => {
       const text = 'Hello world!';
-      expect(convertToSmartQuotes(text)).toBe(text);
+      expect(smartQuotes(text)).toBe(text);
     });
 
     it('handles empty string', () => {
-      expect(convertToSmartQuotes('')).toBe('');
+      expect(smartQuotes('')).toBe('');
     });
   });
 });
@@ -135,12 +171,12 @@ describe('smartQuoteMarkdown', () => {
   describe('prose conversion', () => {
     it('converts quotes in plain prose', () => {
       expect(smartQuoteMarkdown('He said "hello"')).toBe(
-        `He said ${LEFT_DOUBLE}hello${RIGHT_DOUBLE}`,
+        `He said ${LeftDouble}hello${RightDouble}`,
       );
     });
 
     it('converts apostrophes in prose', () => {
-      expect(smartQuoteMarkdown("It's great")).toBe(`It${RIGHT_SINGLE}s great`);
+      expect(smartQuoteMarkdown("It's great")).toBe(`It${RightSingle}s great`);
     });
   });
 
@@ -175,19 +211,19 @@ b = "second"
 
 After "code"`;
 
-      const expected = `Before ${LEFT_DOUBLE}code${RIGHT_DOUBLE}
+      const expected = `Before ${LeftDouble}code${RightDouble}
 
 \`\`\`js
 const a = "first";
 \`\`\`
 
-Between ${LEFT_DOUBLE}blocks${RIGHT_DOUBLE}
+Between ${LeftDouble}blocks${RightDouble}
 
 \`\`\`py
 b = "second"
 \`\`\`
 
-After ${LEFT_DOUBLE}code${RIGHT_DOUBLE}`;
+After ${LeftDouble}code${RightDouble}`;
 
       expect(smartQuoteMarkdown(input)).toBe(expected);
     });
@@ -234,7 +270,7 @@ After ${LEFT_DOUBLE}code${RIGHT_DOUBLE}`;
 
 Done.`;
       // Note: "Here's" in prose should be converted
-      const expected = `Here${RIGHT_SINGLE}s some code:
+      const expected = `Here${RightSingle}s some code:
 
     const a = "first";
     const b = "second";
@@ -254,20 +290,20 @@ const greeting = "hello";
 
 Then he said "goodbye".`;
 
-      const expected = `He said ${LEFT_DOUBLE}hello${RIGHT_DOUBLE} and showed this code:
+      const expected = `He said ${LeftDouble}hello${RightDouble} and showed this code:
 
 \`\`\`js
 const greeting = "hello";
 \`\`\`
 
-Then he said ${LEFT_DOUBLE}goodbye${RIGHT_DOUBLE}.`;
+Then he said ${LeftDouble}goodbye${RightDouble}.`;
 
       expect(smartQuoteMarkdown(input)).toBe(expected);
     });
 
     it('handles prose with inline code mixed in', () => {
       const input = 'Use "smart quotes" in text but `"straight"` in code';
-      const expected = `Use ${LEFT_DOUBLE}smart quotes${RIGHT_DOUBLE} in text but \`"straight"\` in code`;
+      const expected = `Use ${LeftDouble}smart quotes${RightDouble} in text but \`"straight"\` in code`;
       expect(smartQuoteMarkdown(input)).toBe(expected);
     });
   });
@@ -279,7 +315,7 @@ Then he said ${LEFT_DOUBLE}goodbye${RIGHT_DOUBLE}.`;
     });
 
     it('returns unchanged text with only smart quotes', () => {
-      const input = `${LEFT_DOUBLE}Already smart${RIGHT_DOUBLE}`;
+      const input = `${LeftDouble}Already smart${RightDouble}`;
       expect(smartQuoteMarkdown(input)).toBe(input);
     });
   });
@@ -302,104 +338,26 @@ Then he said ${LEFT_DOUBLE}goodbye${RIGHT_DOUBLE}.`;
 });
 
 describe('smartQuoteTransform', () => {
-  // Helper to create text-delta stream parts
-  const textDelta = (text: string) => ({ type: 'text-delta' as const, textDelta: text });
+  it('transforms string chunks through a TransformStream', async () => {
+    const chunks = ['He said ', '"hello"'];
+    const transformed = createReadableStream(chunks).pipeThrough(smartQuoteTransform());
+    const result = await collectStrings(transformed);
 
-  // Helper to collect text from stream parts
-  async function collectText(
-    readable: ReadableStream<{ type: string; textDelta?: string }>,
-  ): Promise<string> {
-    const reader = readable.getReader();
-    const results: string[] = [];
-    let done = false;
-    while (!done) {
-      const { value, done: isDone } = await reader.read();
-      if (value?.type === 'text-delta' && value.textDelta) {
-        results.push(value.textDelta);
-      }
-      done = isDone;
-    }
-    return results.join('');
-  }
-
-  it('transforms text-delta parts through a TransformStream', async () => {
-    const parts = [textDelta('He said '), textDelta('"hello"')];
-    const readable = new ReadableStream({
-      start(controller) {
-        for (const part of parts) {
-          controller.enqueue(part);
-        }
-        controller.close();
-      },
-    });
-
-    const transformed = readable.pipeThrough(smartQuoteTransform());
-    const result = await collectText(transformed);
-
-    expect(result).toBe(`He said ${LEFT_DOUBLE}hello${RIGHT_DOUBLE}`);
-  });
-
-  it('passes through non-text-delta parts unchanged', async () => {
-    const parts = [
-      { type: 'step-start', stepId: '1' },
-      textDelta('"hello"'),
-      { type: 'step-finish', stepId: '1' },
-    ];
-    const readable = new ReadableStream({
-      start(controller) {
-        for (const part of parts) {
-          controller.enqueue(part);
-        }
-        controller.close();
-      },
-    });
-
-    const transformed = readable.pipeThrough(smartQuoteTransform());
-    const reader = transformed.getReader();
-
-    const results: Array<{ type: string }> = [];
-    let done = false;
-    while (!done) {
-      const { value, done: isDone } = await reader.read();
-      if (value) results.push(value);
-      done = isDone;
-    }
-
-    expect(results).toHaveLength(3);
-    expect(results[0]).toEqual({ type: 'step-start', stepId: '1' });
-    expect(results[2]).toEqual({ type: 'step-finish', stepId: '1' });
+    expect(result).toBe(`He said ${LeftDouble}hello${RightDouble}`);
   });
 
   it('handles apostrophe at chunk boundary', async () => {
-    const parts = [textDelta("don'"), textDelta('t')];
-    const readable = new ReadableStream({
-      start(controller) {
-        for (const part of parts) {
-          controller.enqueue(part);
-        }
-        controller.close();
-      },
-    });
+    const chunks = ["don'", 't'];
+    const transformed = createReadableStream(chunks).pipeThrough(smartQuoteTransform());
+    const result = await collectStrings(transformed);
 
-    const transformed = readable.pipeThrough(smartQuoteTransform());
-    const result = await collectText(transformed);
-
-    expect(result).toBe(`don${RIGHT_SINGLE}t`);
+    expect(result).toBe(`don${RightSingle}t`);
   });
 
   it('flushes buffered content at stream end', async () => {
-    const parts = [textDelta("it'")];
-    const readable = new ReadableStream({
-      start(controller) {
-        for (const part of parts) {
-          controller.enqueue(part);
-        }
-        controller.close();
-      },
-    });
-
-    const transformed = readable.pipeThrough(smartQuoteTransform());
-    const result = await collectText(transformed);
+    const chunks = ["it'"];
+    const transformed = createReadableStream(chunks).pipeThrough(smartQuoteTransform());
+    const result = await collectStrings(transformed);
 
     // "it" is output during streaming, "'" is flushed at end
     expect(result).toBe("it'");
@@ -408,49 +366,22 @@ describe('smartQuoteTransform', () => {
   it('produces same result as batch conversion', async () => {
     const text = `She said "it's wonderful" and he replied "I couldn't agree more"`;
     const chunks = text.match(/.{1,10}/g) ?? [];
-    const parts = chunks.map(textDelta);
+    const transformed = createReadableStream(chunks).pipeThrough(smartQuoteTransform());
+    const result = await collectStrings(transformed);
 
-    const readable = new ReadableStream({
-      start(controller) {
-        for (const part of parts) {
-          controller.enqueue(part);
-        }
-        controller.close();
-      },
-    });
-
-    const transformed = readable.pipeThrough(smartQuoteTransform());
-    const result = await collectText(transformed);
-
-    expect(result).toBe(convertToSmartQuotes(text));
+    expect(result).toBe(smartQuotes(text));
   });
 
   it('accepts options parameter', async () => {
-    const parts = [textDelta('"hello"')];
-    const readable = new ReadableStream({
-      start(controller) {
-        for (const part of parts) {
-          controller.enqueue(part);
-        }
-        controller.close();
-      },
-    });
+    const chunks = ['"hello"'];
+    const transformed = createReadableStream(chunks).pipeThrough(smartQuoteTransform({}));
+    const result = await collectStrings(transformed);
 
-    // Options are reserved for future use but should be accepted
-    const transformed = readable.pipeThrough(smartQuoteTransform({}));
-    const result = await collectText(transformed);
-
-    expect(result).toBe(`${LEFT_DOUBLE}hello${RIGHT_DOUBLE}`);
+    expect(result).toBe(`${LeftDouble}hello${RightDouble}`);
   });
 });
 
 describe('smartQuoteAsyncIterable', () => {
-  async function* generateChunks(chunks: string[]): AsyncGenerator<string> {
-    for (const chunk of chunks) {
-      yield chunk;
-    }
-  }
-
   it('transforms chunks from an async iterable', async () => {
     const chunks = ['He said ', '"hello"'];
 
@@ -459,7 +390,7 @@ describe('smartQuoteAsyncIterable', () => {
       results.push(chunk);
     }
 
-    expect(results.join('')).toBe(`He said ${LEFT_DOUBLE}hello${RIGHT_DOUBLE}`);
+    expect(results.join('')).toBe(`He said ${LeftDouble}hello${RightDouble}`);
   });
 
   it('flushes buffered content at iteration end', async () => {
@@ -470,7 +401,7 @@ describe('smartQuoteAsyncIterable', () => {
       results.push(chunk);
     }
 
-    expect(results.join('')).toBe(`don${RIGHT_SINGLE}t`);
+    expect(results.join('')).toBe(`don${RightSingle}t`);
   });
 
   it('handles trailing single quote flush', async () => {
@@ -495,7 +426,7 @@ describe('smartQuoteAsyncIterable', () => {
       results.push(chunk);
     }
 
-    expect(results.join('')).toBe(convertToSmartQuotes(text));
+    expect(results.join('')).toBe(smartQuotes(text));
   });
 
   it('handles empty source', async () => {
@@ -505,5 +436,203 @@ describe('smartQuoteAsyncIterable', () => {
     }
 
     expect(results).toEqual([]);
+  });
+});
+
+describe('smartQuoteTransform Markdown mode', () => {
+  describe('fenced code blocks', () => {
+    it('preserves quotes in fenced code blocks', async () => {
+      const chunks = [
+        'He said "hello"\n',
+        '```js\n',
+        'const x = "world";\n',
+        '```\n',
+        'Then "goodbye"',
+      ];
+      const transformed = createReadableStream(chunks).pipeThrough(smartQuoteTransform());
+      const result = await collectStrings(transformed);
+
+      expect(result).toBe(
+        `He said ${LeftDouble}hello${RightDouble}\n\`\`\`js\nconst x = "world";\n\`\`\`\nThen ${LeftDouble}goodbye${RightDouble}`,
+      );
+    });
+
+    it('handles fence opener split across chunks', async () => {
+      const chunks = [
+        'Text "here"\n',
+        '``',
+        '`js\nconst x = "unchanged";\n```',
+      ];
+      const transformed = createReadableStream(chunks).pipeThrough(smartQuoteTransform());
+      const result = await collectStrings(transformed);
+
+      expect(result).toBe(
+        `Text ${LeftDouble}here${RightDouble}\n\`\`\`js\nconst x = "unchanged";\n\`\`\``,
+      );
+    });
+
+    it('handles fence closer at end of stream', async () => {
+      const chunks = ['```\n"code"\n```'];
+      const transformed = createReadableStream(chunks).pipeThrough(smartQuoteTransform());
+      const result = await collectStrings(transformed);
+
+      expect(result).toBe('```\n"code"\n```');
+    });
+  });
+
+  describe('inline code', () => {
+    it('preserves quotes in inline code', async () => {
+      const chunks = [
+        'Use `"',
+        'quotes"` in code',
+      ];
+      const transformed = createReadableStream(chunks).pipeThrough(smartQuoteTransform());
+      const result = await collectStrings(transformed);
+
+      expect(result).toBe('Use `"quotes"` in code');
+    });
+
+    it('handles inline code split across chunks', async () => {
+      const chunks = [
+        'He said "hi" and `const x = "',
+        'test"` was shown',
+      ];
+      const transformed = createReadableStream(chunks).pipeThrough(smartQuoteTransform());
+      const result = await collectStrings(transformed);
+
+      expect(result).toBe(
+        `He said ${LeftDouble}hi${RightDouble} and \`const x = "test"\` was shown`,
+      );
+    });
+
+    it('handles double backticks for inline code', async () => {
+      const chunks = ['Use ``"quoted"`` here'];
+      const transformed = createReadableStream(chunks).pipeThrough(smartQuoteTransform());
+      const result = await collectStrings(transformed);
+
+      expect(result).toBe('Use ``"quoted"`` here');
+    });
+  });
+
+  describe('disableMarkdown option', () => {
+    it('converts quotes inside code blocks when Markdown is disabled', async () => {
+      const chunks = ['```js\nconst x = "hello";\n```'];
+      const transformed = createReadableStream(chunks).pipeThrough(
+        smartQuoteTransform({ disableMarkdown: true }),
+      );
+      const result = await collectStrings(transformed);
+
+      expect(result).toBe(`\`\`\`js\nconst x = ${LeftDouble}hello${RightDouble};\n\`\`\``);
+    });
+  });
+
+  describe('produces same result as batch smartQuoteMarkdown', () => {
+    it('matches batch conversion for mixed content', async () => {
+      const text = `He said "hello" and showed \`"code"\` here.
+
+\`\`\`js
+const greeting = "world";
+\`\`\`
+
+Then "goodbye".`;
+
+      // Split into small chunks to test streaming
+      // Use [\s\S] instead of . to include newlines in chunks
+      const chunks = text.match(/[\s\S]{1,15}/g) ?? [];
+      const transformed = createReadableStream(chunks).pipeThrough(smartQuoteTransform());
+      const result = await collectStrings(transformed);
+
+      expect(result).toBe(smartQuoteMarkdown(text));
+    });
+  });
+});
+
+describe('smartQuoteAsyncIterable Markdown mode', () => {
+  it('preserves quotes in fenced code blocks', async () => {
+    const chunks = ['He said "hi"\n', '```\n', '"code"\n', '```'];
+
+    const results: string[] = [];
+    for await (const chunk of smartQuoteAsyncIterable(generateChunks(chunks))) {
+      results.push(chunk);
+    }
+
+    expect(results.join('')).toBe(
+      `He said ${LeftDouble}hi${RightDouble}\n\`\`\`\n"code"\n\`\`\``,
+    );
+  });
+
+  it('preserves quotes in fenced code blocks with small AI-like chunks', async () => {
+    // This test simulates realistic AI streaming where chunks are small and don't
+    // align with Markdown structure. The bug: quotes inside fenced code blocks
+    // get converted when fence boundaries are split across chunks.
+    const text = 'Here is code:\n\n```js\nconst x = "hello";\n```\n\nDone!';
+    // Split into very small chunks (3-5 chars) like AI streaming produces
+    const chunks = text.match(/[\s\S]{1,5}/g) ?? [];
+
+    const results: string[] = [];
+    for await (const chunk of smartQuoteAsyncIterable(generateChunks(chunks))) {
+      results.push(chunk);
+    }
+
+    const result = results.join('');
+
+    // The code block should preserve straight quotes
+    const codeMatch = result.match(/```[\s\S]*?```/);
+    expect(codeMatch).not.toBeNull();
+    if (codeMatch) {
+      // Should have straight quotes in code block
+      expect(codeMatch[0]).toContain('"');
+      // Should NOT have smart quotes in code block
+      expect(codeMatch[0]).not.toContain(LeftDouble);
+      expect(codeMatch[0]).not.toContain(RightDouble);
+    }
+  });
+
+  it('preserves quotes in inline code', async () => {
+    const chunks = ['Use `"test"', '` here'];
+
+    const results: string[] = [];
+    for await (const chunk of smartQuoteAsyncIterable(generateChunks(chunks))) {
+      results.push(chunk);
+    }
+
+    expect(results.join('')).toBe('Use `"test"` here');
+  });
+
+  it('converts quotes in prose when Markdown disabled', async () => {
+    // With disableMarkdown: true, quotes inside backticks should also be converted
+    const chunks = ['Text with "quotes" and `"code"`'];
+
+    const results: string[] = [];
+    for await (const chunk of smartQuoteAsyncIterable(generateChunks(chunks), { disableMarkdown: true })) {
+      results.push(chunk);
+    }
+
+    // Quotes get converted everywhere - even inside backticks
+    // Note: quotes after backticks become closing quotes (RightDouble) since
+    // backtick is not an "opening context" character like whitespace or (
+    expect(results.join('')).toBe(
+      `Text with ${LeftDouble}quotes${RightDouble} and \`${RightDouble}code${RightDouble}\``,
+    );
+  });
+
+  it('matches batch smartQuoteMarkdown for complex content', async () => {
+    const text = `"Hello" and \`"code"\` plus:
+
+\`\`\`
+const x = "test";
+\`\`\`
+
+"Goodbye"`;
+
+    // Use [\s\S] instead of . to include newlines in chunks
+    const chunks = text.match(/[\s\S]{1,10}/g) ?? [];
+
+    const results: string[] = [];
+    for await (const chunk of smartQuoteAsyncIterable(generateChunks(chunks))) {
+      results.push(chunk);
+    }
+
+    expect(results.join('')).toBe(smartQuoteMarkdown(text));
   });
 });

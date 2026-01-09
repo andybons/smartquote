@@ -20,12 +20,15 @@ smartquotes/
 
 ## Commands
 
+**Always run commands at the monorepo root** (not filtered to a single package) to catch cross-package issues.
+
 ### Root workspace commands
 
 ```bash
 pnpm install          # Install all workspace dependencies
 pnpm build            # Build all packages
 pnpm test             # Test all packages
+pnpm check-types      # Type check all packages
 pnpm lint             # Lint all packages
 ```
 
@@ -38,6 +41,7 @@ pnpm --filter smartquotes test:watch   # Run tests in watch mode
 pnpm --filter smartquotes bench        # Run performance benchmarks
 pnpm --filter smartquotes lint         # ESLint on src/
 pnpm --filter smartquotes check-types  # TypeScript type checking
+pnpm --filter smartquotes docs         # Generate API docs with TypeDoc
 ```
 
 Or from within the package directory:
@@ -77,18 +81,19 @@ Provides smart quote conversion utilities and an ESLint plugin, exported via thr
 
 #### Core Module (`src/index.ts`)
 
-- `QUOTES` - Constants using Unicode escapes (critical: LLMs normalize smart quotes to straight quotes, so always use `\u201C` etc.)
-- `convertToSmartQuotes()` - Context-aware batch conversion
+- `SmartQuote` - Constants using Unicode escapes (critical: LLMs normalize smart quotes to straight quotes, so always use `\u201C` etc.)
+- `smartQuotes()` - Context-aware batch conversion
 - `smartQuoteMarkdown()` - Markdown-aware conversion that preserves code blocks via placeholder extraction
 
 **Streaming API** (for AI responses):
 - `smartQuoteTransform(options?)` - Returns a generic `TransformStream` for structured stream parts
-- `smartQuoteAsyncIterable(source)` - Wraps an `AsyncIterable<string>` for plain text streams
+- `smartQuoteAsyncIterable(source, options?)` - Wraps an `AsyncIterable<string>` for plain text streams
+- Both accept `{ disableMarkdown?: boolean }` - set `true` to convert quotes even inside code blocks
 
 #### Vercel AI SDK Module (`src/ai-sdk/index.ts`)
 
 - `smartQuoteTransform` - Typed as `StreamTextTransform<ToolSet>` for Vercel AI SDK v5+
-- Re-exports `QUOTES` and `convertToSmartQuotes` for convenience
+- Re-exports `SmartQuote` and `smartQuotes` for convenience
 - Requires `ai@>=5.0.0` peer dependency
 
 #### ESLint Plugin (`src/eslint/`)
@@ -104,7 +109,7 @@ Python port of the core conversion logic:
 
 - `smartquotes.convert_to_smart_quotes()` - Batch conversion
 - `smartquotes.smart_quote_markdown()` - Markdown-aware conversion
-- `smartquotes.QUOTES` - Quote character constants
+- `smartquotes.SmartQuote` - Quote character constants
 
 ## Key Implementation Details
 
@@ -112,12 +117,14 @@ Python port of the core conversion logic:
 - The markdown processor extracts code blocks to placeholders in order: fenced → inline → indented
 - ESLint rule uses allowlist for props (not denylist) to avoid false positives on non-user-facing strings
 - Streaming API buffers trailing single quotes to detect apostrophes across chunk boundaries (flush with `transform.flush()`)
+- Options use `disableMarkdown` (default `false`) not `markdown` - boolean options should default to `false`
 
 ## Workspace Configuration
 
 - `pnpm-workspace.yaml` defines workspace packages
 - Examples use `workspace:*` protocol to reference the smartquotes package
 - Root `package.json` is private and contains shared dev dependencies (husky, commitlint)
+- After changing exports in `packages/smartquotes`, run `pnpm --filter smartquotes build` before `pnpm check-types` - dependent packages import from `dist/`, not source
 
 ## Commit Convention
 

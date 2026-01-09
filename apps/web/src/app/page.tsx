@@ -1,7 +1,7 @@
-import { convertToSmartQuotes } from 'smartquotes';
+import { smartQuotes } from 'smartquotes';
 
 export default function Home() {
-  const example = convertToSmartQuotes('"Hello," she said. "It\'s a beautiful day!"');
+  const example = smartQuotes('"Hello," she said. "It\'s a beautiful day!"');
 
   return (
     <main style={{ maxWidth: '800px', margin: '0 auto', padding: '2rem' }}>

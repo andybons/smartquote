@@ -32,7 +32,9 @@
     "test:watch": "vitest",
     "bench": "vitest bench",
     "lint": "eslint src",
-    "check-types": "tsc --noEmit"
+    "check-types": "tsc --noEmit",
+    "docs": "typedoc",
+    "docs:watch": "typedoc --watch"
   },
   "keywords": [
     "smart-quotes",
@@ -52,6 +54,7 @@
     "ai": "^6.0.25",
     "eslint": "^9.39.2",
     "tsup": "^8.5.1",
+    "typedoc": "^0.28.15",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.52.0",
     "vitest": "^4.0.16"

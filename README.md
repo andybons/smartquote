@@ -4,10 +4,10 @@ Smart quote conversion utilities for typographically correct quotes.
 
 ## Packages
 
-| Package | Description |
-|---------|-------------|
+| Package                             | Description                                                                   |
+| ----------------------------------- | ----------------------------------------------------------------------------- |
 | [smartquote](./packages/smartquote) | Core library with streaming API, Vercel AI SDK integration, and ESLint plugin |
-| [smartquotes (Python)](./python) | Python port of the core conversion logic |
+| [smartquotes (Python)](./python)    | Python port of the core conversion logic                                      |
 
 ## Quick Start
 
@@ -16,10 +16,10 @@ npm install smartquote
 ```
 
 ```typescript
-import { smartQuotes } from 'smartquote';
+import { smartQuotes } from "smartquote";
 
 smartQuotes('"Hello," she said.');
-// → "Hello," she said.
+// → “Hello,” she said.
 ```
 
 See the [package README](./packages/smartquote/README.md) for full API documentation.

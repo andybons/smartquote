@@ -2,6 +2,10 @@
 
 Smart quote conversion utilities for typographically correct quotes.
 
+## Why this exists
+
+Some LLMs (all Anthropic models, for instance) are incapable of outputting smart quotes, even when explicitly asked—and [Anthropic has confirmed](https://github.com/anthropics/anthropic-sdk-typescript/issues/561#issuecomment-2442675237) this won't be fixed anytime soon. This package provides a streaming transform for AI output and an ESLint rule/autofix for vibe-coded JSX/TSX.
+
 ## Packages
 
 | Package                             | Description                                                                   |

@@ -5,7 +5,7 @@
  * to test our transform with realistic AI streaming patterns.
  */
 import { describe, expect, it } from 'vitest';
-import { streamText } from 'ai';
+import { streamText, type StreamTextTransform, type ToolSet } from 'ai';
 import { MockLanguageModelV3, simulateReadableStream } from 'ai/test';
 
 import { smartQuoteTransform, SmartQuote } from './index.js';
@@ -292,6 +292,33 @@ describe('smartQuoteTransform with AI SDK', () => {
       // With disableMarkdown: true, quotes should be converted even in code blocks
       expect(text).toContain(LeftDouble);
       expect(text).toContain(RightDouble);
+    });
+  });
+
+  describe('type compatibility', () => {
+    it('is compatible with streamText tools parameter', () => {
+      // Define a typed tools object - we intersect with ToolSet to satisfy
+      // the constraint since our simplified type is missing required Tool properties
+      type MyToolSet = {
+        myTool: { description: string; parameters: unknown };
+      };
+      // Create a transform with the specific tool type
+      const transform = smartQuoteTransform<MyToolSet & ToolSet>();
+      // This should compile without type errors - the transform should be assignable
+      // to experimental_transform when tools are specified
+      const config: { experimental_transform: StreamTextTransform<MyToolSet & ToolSet> } = {
+        experimental_transform: transform,
+      };
+      expect(config.experimental_transform).toBe(transform);
+    });
+
+    it('works with default ToolSet when no type parameter is specified', () => {
+      // When calling without type params, it defaults to ToolSet
+      const transform = smartQuoteTransform();
+      const config: { experimental_transform: StreamTextTransform<ToolSet> } = {
+        experimental_transform: transform,
+      };
+      expect(config.experimental_transform).toBe(transform);
     });
   });
 });

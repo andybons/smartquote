@@ -45,16 +45,25 @@ export { SmartQuote, smartQuotes } from '../index.js';
  *
  * Converts straight quotes to typographically correct smart quotes
  * in streaming AI responses. See module documentation for examples.
+ *
+ * @remarks
+ * The function is generic over the tools type parameter, allowing it to be
+ * compatible with any tool configuration in `streamText()`. The transform
+ * only processes `text-delta` stream parts and passes through all other
+ * parts unchanged, including tool-related stream parts.
+ *
+ * @typeParam TOOLS - The tools type from the streamText configuration.
+ *   Defaults to ToolSet for compatibility when no tools are specified.
  */
-export function smartQuoteTransform(
+export function smartQuoteTransform<TOOLS extends ToolSet = ToolSet>(
   options?: SmartQuoteTransformOptions,
-): StreamTextTransform<ToolSet> {
+): StreamTextTransform<TOOLS> {
   return () => {
     const transform = options?.disableMarkdown
       ? createTextTransform()
       : createMarkdownTextTransform();
 
-    return new TransformStream<TextStreamPart<ToolSet>, TextStreamPart<ToolSet>>({
+    return new TransformStream<TextStreamPart<TOOLS>, TextStreamPart<TOOLS>>({
       transform(part, controller) {
         if (part.type === 'text-delta') {
           const converted = transform(part.text);

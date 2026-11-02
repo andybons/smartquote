@@ -37,10 +37,35 @@ _OPENING_CONTEXT: Final[frozenset[str]] = frozenset(
 
 _LETTER_REGEX: Final[re.Pattern[str]] = re.compile(r"[a-zA-Z]")
 
+# Words that drop their first letters, so a leading ' is an apostrophe and not
+# an opening quote: 'til, 'tis, 'twas, 'em, 'cause, and the n of rock 'n' roll.
+# Matched case-insensitively, as a whole word. 'round, 'bout and similar are
+# left out: they are also ordinary quoted words.
+# Keep in sync with ELISION_WORDS in packages/smartquote/src/index.ts.
+_ELISION_WORDS: Final[tuple[str, ...]] = ("til", "tis", "twas", "em", "cause", "n")
+
+# A decade or year with its first two digits dropped: '90s, '20s, '99
+_ELISION_DIGITS_REGEX: Final[re.Pattern[str]] = re.compile(
+    r"[0-9]{2}(?:s(?![A-Za-z0-9])|(?![A-Za-z0-9']))"
+)
+_ELISION_WORD_REGEX: Final[re.Pattern[str]] = re.compile(
+    "(?:" + "|".join(_ELISION_WORDS) + ")(?![A-Za-z])", re.IGNORECASE | re.ASCII
+)
+
+# How many characters after a ' the elision rule reads.
+_ELISION_LOOKAHEAD: Final[int] = max(len(word) for word in _ELISION_WORDS) + 1
+
 
 def _is_letter(char: str) -> bool:
     """Check if a character is a letter."""
     return bool(_LETTER_REGEX.match(char))
+
+
+def _is_elision(following: str) -> bool:
+    """Check if the text after a ' starts an elided word or decade."""
+    return bool(
+        _ELISION_DIGITS_REGEX.match(following) or _ELISION_WORD_REGEX.match(following)
+    )
 
 
 def _is_opening_context(prev_char: str, is_start: bool, opposite_quote: str) -> bool:
@@ -48,11 +73,12 @@ def _is_opening_context(prev_char: str, is_start: bool, opposite_quote: str) -> 
     return is_start or prev_char in _OPENING_CONTEXT or prev_char == opposite_quote
 
 
-def _convert_char(char: str, prev_char: str, next_char: str, is_start: bool) -> str:
+def _convert_char(char: str, prev_char: str, following: str, is_start: bool) -> str:
     """
     Core conversion logic for a single character.
 
-    Returns the converted character for a given position.
+    Returns the converted character for a given position. ``following`` holds up
+    to ``_ELISION_LOOKAHEAD`` characters after ``char``.
     """
     if char == QUOTES.STRAIGHT_DOUBLE:
         if _is_opening_context(prev_char, is_start, QUOTES.LEFT_SINGLE):
@@ -61,10 +87,11 @@ def _convert_char(char: str, prev_char: str, next_char: str, is_start: bool) -> 
 
     if char == QUOTES.STRAIGHT_SINGLE:
         # Apostrophe: preceded by a letter AND followed by a letter
-        if _is_letter(prev_char) and _is_letter(next_char):
+        if _is_letter(prev_char) and _is_letter(following[:1]):
             return QUOTES.RIGHT_SINGLE
         if _is_opening_context(prev_char, is_start, QUOTES.LEFT_DOUBLE):
-            return QUOTES.LEFT_SINGLE
+            # Leading apostrophe of an elision ('90s, 'til) is not an opening quote
+            return QUOTES.RIGHT_SINGLE if _is_elision(following) else QUOTES.LEFT_SINGLE
         return QUOTES.RIGHT_SINGLE
 
     return char
@@ -86,6 +113,10 @@ def convert_to_smart_quotes(text: str) -> str:
 
     Apostrophes - single quotes inside words use right single quote.
 
+    Elisions - a ' that would open a quote uses right single quote when it
+    starts a decade ('90s) or a word that dropped its first letters ('til,
+    'tis, 'twas, 'em, 'cause, rock 'n' roll).
+
     Args:
         text: The text to convert.
 
@@ -96,8 +127,8 @@ def convert_to_smart_quotes(text: str) -> str:
 
     for i, char in enumerate(text):
         prev_char = text[i - 1] if i > 0 else ""
-        next_char = text[i + 1] if i < len(text) - 1 else ""
-        result.append(_convert_char(char, prev_char, next_char, i == 0))
+        following = text[i + 1 : i + 1 + _ELISION_LOOKAHEAD]
+        result.append(_convert_char(char, prev_char, following, i == 0))
 
     return "".join(result)
 

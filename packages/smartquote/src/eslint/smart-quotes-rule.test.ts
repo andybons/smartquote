@@ -60,6 +60,20 @@ describe('smart-quotes', () => {
       });
     });
 
+    it('converts a leading elision apostrophe to a right single quote', () => {
+      ruleTester.run('smart-quotes', rule, {
+        valid: [],
+        invalid: [
+          {
+            code: "<p>Hits from the '90s, 'til dark, rock 'n' roll</p>",
+            output: '<p>Hits from the \u201990s, \u2019til dark, rock \u2019n\u2019 roll</p>',
+            errors: [{ messageId: 'straightQuotes' }],
+            filename,
+          },
+        ],
+      });
+    });
+
     it('converts nested quotes in JSX text', () => {
       ruleTester.run('smart-quotes', rule, {
         valid: [],

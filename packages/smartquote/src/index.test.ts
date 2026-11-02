@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  createMarkdownTextTransform,
+  createTextTransform,
   smartQuotes,
   SmartQuote,
   smartQuoteAsyncIterable,
@@ -127,12 +129,56 @@ describe('smartQuotes', () => {
         `That${RightSingle}s the dogs${RightSingle}.`,
       );
     });
+  });
 
-    it('handles year abbreviations (known limitation)', () => {
-      // '90s - ideally should be RightSingle (apostrophe for omitted "19"),
-      // but algorithm treats ' after space as opening quote.
-      // This is a known edge case; most smart quote algorithms have this limitation.
-      expect(smartQuotes("the '90s")).toBe(`the ${LeftSingle}90s`);
+  describe('leading elisions', () => {
+    it.each([
+      ["the '90s", `the ${RightSingle}90s`],
+      ["the '20s were loud", `the ${RightSingle}20s were loud`],
+      ["class of '99.", `class of ${RightSingle}99.`],
+      ["'90s kids", `${RightSingle}90s kids`],
+      ["wait 'til dark", `wait ${RightSingle}til dark`],
+      ["'Tis the season", `${RightSingle}Tis the season`],
+      ["'twas the night", `${RightSingle}twas the night`],
+      ["let 'em go", `let ${RightSingle}em go`],
+      ["'cause I said so", `${RightSingle}cause I said so`],
+      ["rock 'n' roll", `rock ${RightSingle}n${RightSingle} roll`],
+      ["Rock 'N' Roll", `Rock ${RightSingle}N${RightSingle} Roll`],
+    ])('turns the leading apostrophe in %j into a right single quote', (input, expected) => {
+      expect(smartQuotes(input)).toBe(expected);
+    });
+
+    it('applies after an opening double quote or bracket', () => {
+      expect(smartQuotes('"\'Tis true," he said')).toBe(
+        `${LeftDouble}${RightSingle}Tis true,${RightDouble} he said`,
+      );
+      expect(smartQuotes("(the '90s)")).toBe(`(the ${RightSingle}90s)`);
+    });
+
+    it('keeps real quoted words open', () => {
+      expect(smartQuotes("He said 'hello' to me")).toBe(
+        `He said ${LeftSingle}hello${RightSingle} to me`,
+      );
+      expect(smartQuotes("'hello'")).toBe(`${LeftSingle}hello${RightSingle}`);
+    });
+
+    it('does not treat words that only start like an elision as one', () => {
+      expect(smartQuotes("'tilde' and 'embers' and 'causes' and 'no'")).toBe(
+        `${LeftSingle}tilde${RightSingle} and ${LeftSingle}embers${RightSingle} and ${LeftSingle}causes${RightSingle} and ${LeftSingle}no${RightSingle}`,
+      );
+    });
+
+    it('does not treat other digit runs as a decade', () => {
+      expect(smartQuotes("'2024' and '5' and '123'")).toBe(
+        `${LeftSingle}2024${RightSingle} and ${LeftSingle}5${RightSingle} and ${LeftSingle}123${RightSingle}`,
+      );
+      expect(smartQuotes("the '42' sign")).toBe(`the ${LeftSingle}42${RightSingle} sign`);
+    });
+
+    it("leaves 'round as an opening quote", () => {
+      expect(smartQuotes("the 'round table'")).toBe(
+        `the ${LeftSingle}round table${RightSingle}`,
+      );
     });
   });
 
@@ -634,5 +680,84 @@ const x = "test";
     }
 
     expect(results.join('')).toBe(smartQuoteMarkdown(text));
+  });
+});
+
+describe('streaming leading elisions', () => {
+  const samples = [
+    "the '90s and the '20s",
+    "wait 'til dark, 'cause 'tis late and 'twas cold",
+    "let 'em go",
+    "rock 'n' roll forever",
+    "He said 'hello' and 'goodbye' to the 'round table'.",
+    "\"'Tis true,\" she said",
+    "'90s kids",
+  ];
+
+  function runChunks(
+    createTransform: () => ((chunk: string) => string) & { flush: () => string },
+    chunks: string[],
+  ): string {
+    const transform = createTransform();
+    return chunks.map((chunk) => transform(chunk)).join('') + transform.flush();
+  }
+
+  it('holds the apostrophe at the end of one chunk until 90s arrives', async () => {
+    const chunks = ["the '", '90s were loud'];
+    const transformed = createReadableStream(chunks).pipeThrough(smartQuoteTransform());
+
+    expect(await collectStrings(transformed)).toBe(`the ${RightSingle}90s were loud`);
+  });
+
+  it('holds the apostrophe and part of the word across chunks', async () => {
+    const chunks = ['wait ', "'t", 'i', 'l', ' dark'];
+    const transformed = createReadableStream(chunks).pipeThrough(
+      smartQuoteTransform({ disableMarkdown: true }),
+    );
+
+    expect(await collectStrings(transformed)).toBe(`wait ${RightSingle}til dark`);
+  });
+
+  it('keeps a real quoted word open when it is split across chunks', async () => {
+    const chunks = ["He said '", 'hel', "lo' to me"];
+    const transformed = createReadableStream(chunks).pipeThrough(smartQuoteTransform());
+
+    expect(await collectStrings(transformed)).toBe(
+      `He said ${LeftSingle}hello${RightSingle} to me`,
+    );
+  });
+
+  it('converts a held-back elision when the stream ends', () => {
+    expect(runChunks(createTextTransform, ["class of '", '99'])).toBe(
+      `class of ${RightSingle}99`,
+    );
+    expect(runChunks(createMarkdownTextTransform, ["let '", 'em'])).toBe(
+      `let ${RightSingle}em`,
+    );
+  });
+
+  it('async iterable converts an elision split at the chunk boundary', async () => {
+    const results: string[] = [];
+    for await (const chunk of smartQuoteAsyncIterable(generateChunks(["the '", '90s']))) {
+      results.push(chunk);
+    }
+
+    expect(results.join('')).toBe(`the ${RightSingle}90s`);
+  });
+
+  describe.each([
+    ['text transform', createTextTransform],
+    ['Markdown transform', createMarkdownTextTransform],
+  ])('%s matches batch conversion at every chunk boundary', (_name, createTransform) => {
+    it.each(samples)('%j', (text) => {
+      const expected = smartQuotes(text);
+
+      for (let split = 0; split <= text.length; split++) {
+        expect(runChunks(createTransform, [text.slice(0, split), text.slice(split)])).toBe(
+          expected,
+        );
+      }
+      expect(runChunks(createTransform, text.split(''))).toBe(expected);
+    });
   });
 });

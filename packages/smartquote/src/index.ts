@@ -53,13 +53,41 @@ function isOpeningContext(prevChar: string, isStart: boolean, oppositeQuote: str
 }
 
 /**
+ * Words that drop their first letters, so a leading `'` is an apostrophe
+ * and not an opening quote: `'til`, `'tis`, `'twas`, `'em`, `'cause`, and the
+ * `n` of `rock 'n' roll`. Matched case-insensitively, as a whole word.
+ *
+ * `'round`, `'bout` and similar are left out: they are also ordinary quoted
+ * words, so a leading `'` stays an opening quote there.
+ */
+const ELISION_WORDS: readonly string[] = ['til', 'tis', 'twas', 'em', 'cause', 'n'];
+
+// A decade or year with its first two digits dropped: '90s, '20s, '99
+const ELISION_DIGITS_REGEX = /^\d\d(?:s(?![A-Za-z0-9])|(?![A-Za-z0-9']))/;
+const ELISION_WORD_REGEX = new RegExp(`^(?:${ELISION_WORDS.join('|')})(?![A-Za-z])`, 'i');
+
+/**
+ * How many characters after a `'` the elision rule reads. The longest case is
+ * a word of the list plus the character after it. Streaming code holds back a
+ * `'` until this many characters follow it.
+ */
+const ELISION_LOOKAHEAD = Math.max(...ELISION_WORDS.map((word) => word.length)) + 1;
+
+/** True when `following` (the text after a `'`) starts an elided word or decade. */
+function isElision(following: string): boolean {
+  return ELISION_DIGITS_REGEX.test(following) || ELISION_WORD_REGEX.test(following);
+}
+
+/**
  * Core conversion logic shared by both batch and streaming APIs.
- * Returns the converted character(s) for a given position.
+ * Returns the converted character for a given position.
+ *
+ * @param following - Up to {@link ELISION_LOOKAHEAD} characters after `char`
  */
 function convertChar(
   char: string,
   prevChar: string,
-  nextChar: string,
+  following: string,
   isStart: boolean,
 ): string {
   if (char === SmartQuote.StraightDouble) {
@@ -70,15 +98,32 @@ function convertChar(
 
   if (char === SmartQuote.StraightSingle) {
     // Apostrophe: preceded by a letter AND followed by a letter
-    if (isLetter(prevChar) && isLetter(nextChar)) {
+    if (isLetter(prevChar) && isLetter(following.charAt(0))) {
       return SmartQuote.RightSingle;
     }
-    return isOpeningContext(prevChar, isStart, SmartQuote.LeftDouble)
-      ? SmartQuote.LeftSingle
-      : SmartQuote.RightSingle;
+    if (isOpeningContext(prevChar, isStart, SmartQuote.LeftDouble)) {
+      // Leading apostrophe of an elision ('90s, 'til) is not an opening quote
+      return isElision(following) ? SmartQuote.RightSingle : SmartQuote.LeftSingle;
+    }
+    return SmartQuote.RightSingle;
   }
 
   return char;
+}
+
+/**
+ * True when the streaming code cannot convert the `'` at `index` yet because
+ * the characters after it decide the result and the chunk has not delivered
+ * them all.
+ */
+function needsMoreContext(input: string, index: number, prevChar: string, isStart: boolean): boolean {
+  if (input[index] !== SmartQuote.StraightSingle) return false;
+  const available = input.length - index - 1;
+  if (available === 0) return true;
+  return (
+    available < ELISION_LOOKAHEAD &&
+    isOpeningContext(prevChar, isStart, SmartQuote.LeftDouble)
+  );
 }
 
 /**
@@ -100,6 +145,10 @@ function convertChar(
  *
  * **Apostrophes** - single quotes between letters use right single quote.
  *
+ * **Elisions** - a `'` that would open a quote uses right single quote when it
+ * starts a decade (`'90s`) or a word that dropped its first letters (`'til`,
+ * `'tis`, `'twas`, `'em`, `'cause`, `rock 'n' roll`).
+ *
  * @example Basic usage
  * ```ts
  * import { smartQuotes } from 'smartquote';
@@ -109,6 +158,9 @@ function convertChar(
  *
  * smartQuotes("It's a beautiful day");
  * // Returns: It\u2019s a beautiful day
+ *
+ * smartQuotes("the '90s");
+ * // Returns: the \u201990s
  * ```
  *
  * @example Nested quotes
@@ -123,11 +175,29 @@ export function smartQuotes(text: string): string {
   for (let i = 0; i < text.length; i++) {
     const char = text[i]!;
     const prevChar = text[i - 1] ?? '';
-    const nextChar = text[i + 1] ?? '';
+    const following = text.slice(i + 1, i + 1 + ELISION_LOOKAHEAD);
 
-    result += convertChar(char, prevChar, nextChar, i === 0);
+    result += convertChar(char, prevChar, following, i === 0);
   }
 
+  return result;
+}
+
+/**
+ * Converts text held back by a streaming transform once the stream has ended.
+ * A lone `'` stays straight: nothing is left to say whether it opens or closes.
+ */
+function convertPending(pending: string, lastChar: string): string {
+  if (pending === SmartQuote.StraightSingle) {
+    return pending;
+  }
+
+  let result = '';
+  for (let i = 0; i < pending.length; i++) {
+    const prevChar = i > 0 ? pending[i - 1]! : lastChar;
+    const following = pending.slice(i + 1, i + 1 + ELISION_LOOKAHEAD);
+    result += convertChar(pending[i]!, prevChar, following, i === 0 && lastChar === '');
+  }
   return result;
 }
 
@@ -156,17 +226,17 @@ function convertStreaming(chunk: string, state: StreamState): string {
   for (let i = 0; i < input.length; i++) {
     const char = input[i]!;
     const prevChar = i > 0 ? input[i - 1]! : state.lastChar;
-    const nextChar = input[i + 1] ?? '';
     const isStart = i === 0 && state.lastChar === '';
 
-    // If this is a single quote at the end, we can't determine if it's an apostrophe
-    // without seeing the next character - buffer it for the next chunk
-    if (char === SmartQuote.StraightSingle && i === input.length - 1) {
-      state.pending = char;
+    // A single quote whose result depends on text that has not arrived yet
+    // (apostrophe or closing quote, elision) is buffered for the next chunk
+    if (needsMoreContext(input, i, prevChar, isStart)) {
+      state.pending = input.slice(i);
       break;
     }
 
-    result.push(convertChar(char, prevChar, nextChar, isStart));
+    const following = input.slice(i + 1, i + 1 + ELISION_LOOKAHEAD);
+    result.push(convertChar(char, prevChar, following, isStart));
   }
 
   // Update state for next chunk
@@ -208,7 +278,7 @@ export function createTextTransform(): ((chunk: string) => string) & { flush: ()
   transform.flush = function (): string {
     const pending = state.pending;
     state.pending = '';
-    return pending;
+    return convertPending(pending, state.lastChar);
   };
 
   return transform;
@@ -317,15 +387,17 @@ function convertMarkdownStreaming(chunk: string, state: MarkdownStreamState): st
       }
 
       // Regular prose character - convert quotes
-      // But first check if we're at end and it's a single quote (apostrophe buffering)
-      if (char === SmartQuote.StraightSingle && i === input.length - 1) {
-        state.buffer = char;
+      const prevChar = i > 0 ? input[i - 1]! : state.lastChar;
+      const isStart = state.isStart && result.length === 0 && i === 0;
+
+      // Buffer a single quote whose result depends on text that has not arrived yet
+      if (needsMoreContext(input, i, prevChar, isStart)) {
+        state.buffer = remaining;
         return result;
       }
 
-      const prevChar = i > 0 ? input[i - 1]! : state.lastChar;
-      const nextChar = input[i + 1] ?? '';
-      result += convertChar(char, prevChar, nextChar, state.isStart && result.length === 0 && i === 0);
+      const following = input.slice(i + 1, i + 1 + ELISION_LOOKAHEAD);
+      result += convertChar(char, prevChar, following, isStart);
 
       state.lastChar = result[result.length - 1]!;
       state.atLineStart = char === '\n';
@@ -442,10 +514,13 @@ export function createMarkdownTextTransform(): ((chunk: string) => string) & { f
 
     if (buffered.length === 0) return '';
 
-    // If we're in fence mode or have a trailing single quote, output as-is
-    // (we can't determine the quote type without knowing what follows)
-    if (state.mode === 'fence' || buffered === SmartQuote.StraightSingle) {
+    if (state.mode === 'fence') {
       return buffered;
+    }
+
+    // Held back after a single quote: convert with the context before it
+    if (buffered.startsWith(SmartQuote.StraightSingle)) {
+      return convertPending(buffered, state.lastChar);
     }
 
     // For buffered backticks that never became code blocks, convert as prose

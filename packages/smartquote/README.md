@@ -42,6 +42,10 @@ smartQuotes('"hello"');
 smartQuotes("It's wonderful");
 // === `It${RightSingle}s wonderful`
 
+// Leading apostrophes of elisions are right single quotes
+smartQuotes("the '90s, 'til dark, rock 'n' roll");
+// === `the ${RightSingle}90s, ${RightSingle}til dark, rock ${RightSingle}n${RightSingle} roll`
+
 // Nested quotes work correctly
 smartQuotes(`He said "She told me 'yes'"`);
 // Outer double quotes, inner single quotes
@@ -129,7 +133,7 @@ const stream = someTextStream.pipeThrough(smartQuoteTransform({ disableMarkdown:
 |--------|------|---------|-------------|
 | `disableMarkdown` | `boolean` | `false` | When `false`, preserves straight quotes inside code blocks. Set to `true` to convert all quotes. |
 
-**Why streaming buffers trailing quotes:** When a chunk ends with `'` (e.g., `"don'"`), we can't determine if it's an apostrophe or closing quote until the next chunk arrives. Both streaming APIs handle this automatically.
+**Why streaming buffers trailing quotes:** When a chunk ends with `'` (e.g., `"don'"`), we can't determine if it's an apostrophe or closing quote until the next chunk arrives. An opening-position `'` is also held until enough text follows to tell whether it starts an elision (e.g., `"the '"` then `"90s"`). Both streaming APIs handle this automatically.
 
 ## Vercel AI SDK Integration
 
@@ -222,6 +226,12 @@ Based on the algorithm from [pensee.com/dunham/smartQuotes.html](http://pensee.c
 **Closing quotes** are used in all other cases.
 
 **Apostrophes** are detected when a single quote appears between two letters (`don't`, `it's`).
+
+**Elisions** are the exception to the opening-quote rules. A `'` that would open a quote becomes a right single quote (`’`) when it is followed by:
+- two digits that end a number: `'90s`, `'20s`, `'99`
+- one of these words, in any letter case: `'til`, `'tis`, `'twas`, `'em`, `'cause`, and the `n` of `rock 'n' roll`
+
+Any other `'` in opening position still opens a quote (`'hello'` → `‘hello’`). Words such as `'round` and `'bout` are not treated as elisions, because they are also ordinary quoted words. The list is `ELISION_WORDS` in `src/index.ts`.
 
 ## Performance
 

@@ -36,6 +36,7 @@ Converts straight quotes to smart quotes using context-aware rules:
 - Opening quotes after whitespace, start of text, or left punctuation
 - Closing quotes in all other contexts
 - Apostrophes (single quotes inside words) use right single quote
+- Elisions: a single quote that would open a quote uses right single quote when it starts a decade (`'90s`, `'20s`, `'99`) or one of `'til`, `'tis`, `'twas`, `'em`, `'cause`, and the `n` of `rock 'n' roll` (list: `_ELISION_WORDS` in `smartquotes/core.py`). Other opening single quotes (`'hello'`) still open.
 
 ### `smart_quote_markdown(text: str) -> str`
 

@@ -99,6 +99,28 @@ describe('smartQuoteTransform with AI SDK', () => {
     });
   });
 
+  describe('leading elisions', () => {
+    it('converts a decade apostrophe split from 90s by a chunk boundary', async () => {
+      const result = streamText({
+        model: new MockLanguageModelV3({
+          doStream: async () => ({
+            stream: simulateReadableStream({
+              chunks: createTextChunks(['Music from the \'', '90s and rock \'n\' roll']),
+            }),
+          }),
+        }),
+        prompt: 'test',
+        experimental_transform: smartQuoteTransform(),
+      });
+
+      const text = await collectStreamText(result);
+
+      expect(text).toBe(
+        `Music from the ${RightSingle}90s and rock ${RightSingle}n${RightSingle} roll`,
+      );
+    });
+  });
+
   describe('Markdown code block preservation', () => {
     it('preserves quotes in fenced code blocks with clean chunk boundaries', async () => {
       const result = streamText({

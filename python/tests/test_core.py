@@ -1,5 +1,7 @@
 """Tests for smart quote conversion."""
 
+import pytest
+
 from smartquotes import QUOTES, convert_to_smart_quotes, smart_quote_markdown
 
 
@@ -44,6 +46,49 @@ class TestConvertToSmartQuotes:
 
     def test_no_quotes(self) -> None:
         assert convert_to_smart_quotes("Hello world") == "Hello world"
+
+
+class TestLeadingElisions:
+    """A leading apostrophe of an elision is a right single quote."""
+
+    @pytest.mark.parametrize(
+        ("text", "expected"),
+        [
+            ("the '90s", "the \u201990s"),
+            ("the '20s were loud", "the \u201920s were loud"),
+            ("class of '99.", "class of \u201999."),
+            ("'90s kids", "\u201990s kids"),
+            ("wait 'til dark", "wait \u2019til dark"),
+            ("'Tis the season", "\u2019Tis the season"),
+            ("'twas the night", "\u2019twas the night"),
+            ("let 'em go", "let \u2019em go"),
+            ("'cause I said so", "\u2019cause I said so"),
+            ("rock 'n' roll", "rock \u2019n\u2019 roll"),
+            ("Rock 'N' Roll", "Rock \u2019N\u2019 Roll"),
+            ('"\'Tis true," he said', "\u201C\u2019Tis true,\u201D he said"),
+            ("(the '90s)", "(the \u201990s)"),
+        ],
+    )
+    def test_elision(self, text: str, expected: str) -> None:
+        assert convert_to_smart_quotes(text) == expected
+
+    def test_real_quoted_word_stays_open(self) -> None:
+        result = convert_to_smart_quotes("He said 'hello' to me")
+        assert result == (
+            f"He said {QUOTES.LEFT_SINGLE}hello{QUOTES.RIGHT_SINGLE} to me"
+        )
+
+    @pytest.mark.parametrize(
+        "word",
+        ["tilde", "embers", "causes", "no", "round", "2024", "5", "123", "42"],
+    )
+    def test_words_and_numbers_that_are_not_elisions_stay_open(self, word: str) -> None:
+        result = convert_to_smart_quotes(f"a '{word}' b")
+        assert result == f"a {QUOTES.LEFT_SINGLE}{word}{QUOTES.RIGHT_SINGLE} b"
+
+    def test_markdown_prose_gets_elisions_and_code_is_untouched(self) -> None:
+        result = smart_quote_markdown("the '90s and `'90s`")
+        assert result == "the \u201990s and `'90s`"
 
 
 class TestSmartQuoteMarkdown:

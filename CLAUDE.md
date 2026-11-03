@@ -116,7 +116,8 @@ Python port of the core conversion logic:
 - Quote constants must use Unicode escapes (`\u201C`) not literal smart quotes - LLMs will normalize them
 - The markdown processor extracts code blocks to placeholders in order: fenced → inline → indented
 - ESLint rule uses allowlist for props (not denylist) to avoid false positives on non-user-facing strings
-- Streaming API buffers trailing single quotes to detect apostrophes across chunk boundaries (flush with `transform.flush()`)
+- Streaming API buffers trailing single quotes (and opening-position ones until the elision lookahead is available) to detect apostrophes and elisions across chunk boundaries (flush with `transform.flush()`)
+- A `'` in opening position becomes a right single quote for elisions (`'90s`, `'til`, `'em`, ...). `ELISION_WORDS` in `src/index.ts` and `_ELISION_WORDS` in `python/smartquotes/core.py` hold the word list; keep them in sync
 - Options use `disableMarkdown` (default `false`) not `markdown` - boolean options should default to `false`
 
 ## Workspace Configuration

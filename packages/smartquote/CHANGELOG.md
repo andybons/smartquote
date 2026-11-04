@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.4](https://github.com/andybons/smartquote/compare/smartquote-v0.1.3...smartquote-v0.1.4) (2026-11-03)
+
+
+### Bug Fixes
+
+* use a right single quote for leading apostrophes of elisions ([#12](https://github.com/andybons/smartquote/issues/12)) ([a98bd62](https://github.com/andybons/smartquote/commit/a98bd6297e9250fba7664a914eb1ec09bba20096))
+
 ## [0.1.3](https://github.com/andybons/smartquote/compare/smartquote-v0.1.2...smartquote-v0.1.3) (2026-01-10)
 
 
